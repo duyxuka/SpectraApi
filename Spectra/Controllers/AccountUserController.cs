@@ -80,6 +80,12 @@ namespace Spectra.Controllers
             {
                 return BadRequest(ModelState);
             }
+            var userIdClaim = User.FindFirst("UserId")?.Value;
+
+            if (string.IsNullOrEmpty(userIdClaim) || !int.TryParse(userIdClaim, out var userId))
+            {
+                return Unauthorized();
+            }
 
             var accountUser = await _context.AccountUsers.FindAsync(id);
 
@@ -87,6 +93,7 @@ namespace Spectra.Controllers
             {
                 return NotFound();
             }
+            accountUser.Password = null;
 
             return Ok(accountUser);
         }
@@ -174,8 +181,20 @@ namespace Spectra.Controllers
             {
                 return BadRequest(ModelState);
             }
-            accountUser.CreatedDate = DateTime.Now;
-            _context.AccountUsers.Add(accountUser);
+            var hashedPassword = BCrypt.Net.BCrypt.HashPassword(accountUser.Password); // Mã hóa
+            var user = new AccountUser
+            {
+                Code = accountUser.Code,
+                Name = accountUser.Name,
+                Email = accountUser.Email,
+                Phone = accountUser.Phone,
+                Gender = accountUser.Gender,
+                Status = true,
+                CreatedDate = DateTime.Now,
+                ModifiedDate = DateTime.Now,
+                Password = hashedPassword
+            };
+            _context.AccountUsers.Add(user);
             await _context.SaveChangesAsync();
 
             return CreatedAtAction("GetAccountUser", new { id = accountUser.Id }, accountUser);
@@ -251,23 +270,18 @@ namespace Spectra.Controllers
         [AllowAnonymous]
         public IActionResult Login([FromBody] AccountUserLogin login)
         {
-            AccountUser result;
-            if (login.Emailorphone.Contains('@'))
-            {
-                result = _context.AccountUsers
-                    .Where(acc => acc.Email == login.Emailorphone && acc.Password == login.Password)
-                    .FirstOrDefault();
-            }
-            else
-            {
-                result = _context.AccountUsers
-                    .Where(acc => acc.Phone == login.Emailorphone && acc.Password == login.Password)
-                    .FirstOrDefault();
-            }
+            // Tìm user theo email hoặc số điện thoại và status = true
+            var result = _context.AccountUsers
+                .FirstOrDefault(acc =>
+                    acc.Status == true &&
+                    (acc.Email == login.Emailorphone || acc.Phone == login.Emailorphone)
+                );
 
-            if (result != null)
+            // Nếu tìm thấy và mật khẩu khớp
+            if (result != null && BCrypt.Net.BCrypt.Verify(login.Password, result.Password))
             {
                 var token = GenerateJwtToken(result);
+
                 return Ok(new
                 {
                     Token = token,
@@ -276,15 +290,14 @@ namespace Spectra.Controllers
                         Id = result.Id,
                         Email = result.Email,
                         Phone = result.Phone,
-                        // Thêm các thuộc tính cần thiết khác từ AccountUser
-                        Name = result.Name,
-                        // ...
+                        Name = result.Name
                     }
                 });
             }
 
             return Unauthorized();
         }
+
 
         private string GenerateJwtToken(AccountUser user)
         {
@@ -293,15 +306,19 @@ namespace Spectra.Controllers
 
             var claims = new[]
             {
-        new Claim(JwtRegisteredClaimNames.Sub, user.Email ?? user.Phone),
-        new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString())
-    };
+                new Claim(JwtRegisteredClaimNames.Sub, user.Email ?? user.Phone),
+                new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
+                new Claim("UserId", user.Id.ToString()),
+                new Claim("Name", user.Name ?? ""),
+                new Claim("Phone", user.Phone ?? ""),
+                new Claim("Email", user.Email ?? "")
+            };
 
             var token = new JwtSecurityToken(
                 issuer: _configuration["Jwt:Issuer"],
                 audience: _configuration["Jwt:Audience"],
                 claims: claims,
-                expires: DateTime.Now.AddDays(1),
+                expires: DateTime.UtcNow.AddHours(6),
                 signingCredentials: credentials
             );
 
@@ -313,10 +330,15 @@ namespace Spectra.Controllers
         [Route("ChangePassword/{id}")]
         public async Task<IActionResult> ChangePassword([FromRoute] int? id, [FromBody] string password)
         {
-            AccountUser result = _context.AccountUsers.Find(id);
+            var userIdFromToken = User.FindFirst("UserId")?.Value;
+
+            if (userIdFromToken != id?.ToString())
+                return Forbid();
+
+            var result = await _context.AccountUsers.FindAsync(id);
             if (result != null)
             {
-                result.Password = password;
+                result.Password = BCrypt.Net.BCrypt.HashPassword(password);
                 await _context.SaveChangesAsync();
             }
             return NoContent();

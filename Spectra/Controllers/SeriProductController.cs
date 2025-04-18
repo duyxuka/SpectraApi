@@ -202,6 +202,20 @@ namespace Spectra.Controllers
             return NoContent();
         }
 
+        [HttpPost("UpdateStatusSeriProduct")]
+        [AllowAnonymous]
+        public async Task<IActionResult> UpdateStatusSeriProduct([FromBody] SeriProduct updateData)
+        {
+            var product = await _context.SeriProducts.FirstOrDefaultAsync(p => p.ProductSeri == updateData.ProductSeri);
+            if (product == null)
+                return NotFound();
+
+            product.Status = true;
+
+            await _context.SaveChangesAsync();
+            return Ok();
+        }
+
         // POST: api/SeriProduct
         [HttpPost]
         public async Task<IActionResult> PostSeriProduct([FromBody] SeriProduct seriProduct)

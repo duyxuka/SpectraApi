@@ -50,6 +50,7 @@ namespace Spectra.Models
         public ICollection<Item> Items { get; set; }
         public ICollection<SeriProduct> SeriProducts { get; set; }
         public ICollection<Voucher> Vouchers { get; set; }
+        public ICollection<ProductVariant> ProductVariants { get; set; }
 
     }
 
@@ -88,5 +89,21 @@ namespace Spectra.Models
             return result;
         }
     }
-    
+
+    public class VariantDto
+    {
+        public int VariantId { get; set; }
+        public string SKU { get; set; }
+        public float Price { get; set; }
+        public float SalePrice { get; set; }
+
+        public List<AttributeDto> Attributes { get; set; }
+    }
+
+    public class AttributeDto
+    {
+        public string AttributeName { get; set; }     // e.g. "Color", "Size"
+        public string ValueName { get; set; }         // e.g. "Red", "XL"
+    }
+
 }

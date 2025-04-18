@@ -232,7 +232,35 @@ namespace Spectra.Models
             //{
             //    entity.Property(e => e.Id).ValueGeneratedOnAdd();
             //});
+            modelBuilder.Entity<ProductVariant>(entity =>
+            {
+                entity.Property(e => e.Id).ValueGeneratedOnAdd();
+            });
+            modelBuilder.Entity<ProductVariantAttributes>(entity =>
+            {
+                entity.Property(e => e.Id).ValueGeneratedOnAdd();
+            });
             modelBuilder.Entity<VoucherUsage>(entity =>
+            {
+                entity.Property(e => e.Id).ValueGeneratedOnAdd();
+            });
+            modelBuilder.Entity<Roles>(entity =>
+            {
+                entity.Property(e => e.Id).ValueGeneratedOnAdd();
+            });
+            modelBuilder.Entity<Permissions>(entity =>
+            {
+                entity.Property(e => e.Id).ValueGeneratedOnAdd();
+            });
+            modelBuilder.Entity<RolePermissions>(entity =>
+            {
+                entity.Property(e => e.Id).ValueGeneratedOnAdd();
+            });
+            modelBuilder.Entity<UserRoles>(entity =>
+            {
+                entity.Property(e => e.Id).ValueGeneratedOnAdd();
+            });
+            modelBuilder.Entity<UserTypes>(entity =>
             {
                 entity.Property(e => e.Id).ValueGeneratedOnAdd();
             });
@@ -303,5 +331,12 @@ namespace Spectra.Models
         //public DbSet<ProductCombo> ProductCombos { get; set; }
         //public DbSet<ComboDetail> ComboDetails { get; set; }
         public DbSet<VoucherUsage> VoucherUsages { get; set; }
+        public DbSet<ProductVariant> ProductVariants { get; set; }
+        public DbSet<ProductVariantAttributes> ProductVariantAttributes { get; set; }
+        public DbSet<Roles> Roles { get; set; }
+        public DbSet<Permissions> Permissions { get; set; }
+        public DbSet<RolePermissions> RolePermissions { get; set; }
+        public DbSet<UserRoles> UserRoles { get; set; }
+        public DbSet<UserTypes> UserTypes { get; set; }
     }
 }

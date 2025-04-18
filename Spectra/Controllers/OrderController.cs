@@ -11,6 +11,7 @@ using Spectra.Models;
 using Spectra.Services;
 using Microsoft.AspNetCore.Cors;
 using System.Text.RegularExpressions;
+using Spectra.Models.Authorize;
 
 namespace Spectra.Controllers
 {
@@ -40,6 +41,7 @@ namespace Spectra.Controllers
 
         [HttpGet]
         [Route("OrderPage")]
+        [RoleAuthorize("SuperAdmin", "Sales")]
         public IActionResult OrderResult(int? page, int pagesize = 5)
         {
             string pattern = "[ ,+(){}.*+?^$|]";

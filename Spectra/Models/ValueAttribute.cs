@@ -22,6 +22,7 @@ namespace Spectra.Models
         public DateTime CreatedDate { get; set; }
         public DateTime ModifiedDate { get; set; }
         public ICollection<Item> Items { get; set; }
+        public ICollection<ProductVariantAttributes> ProductVariantAttributes { get; set; }
     }
     public class ValueDisplay : ValueAttribute
     {

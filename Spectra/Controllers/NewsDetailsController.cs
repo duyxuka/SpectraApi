@@ -189,6 +189,67 @@ namespace Spectra.Controllers
             }
         }
 
+        [HttpGet]
+        [Route("search")]
+        [AllowAnonymous]
+        public async Task<IActionResult> GetSearch([FromQuery(Name = "code")] string name)
+        {
+            if (string.IsNullOrWhiteSpace(name))
+            {
+                return BadRequest("Search keyword is required.");
+            }
+
+            try
+            {
+                string pattern = "[ ,+(){}.*+?^$|]";
+                Regex rgx = new Regex(pattern);
+                string keyword = name.ToLower().Trim();
+
+                var products = await _context.NewsDetails
+                    .AsNoTracking()
+                    .Where(nd => nd.Status == true &&
+                                (nd.Name.ToLower().Contains(keyword)))
+                    .Join(_context.CategoryNews,
+                          nd => nd.CategoryNewId,
+                          cn => cn.Id,
+                          (nd, cn) => new { nd, cn })
+                    .Join(_context.Category,
+                          combined => combined.nd.CategoryId,
+                          c => c.Id,
+                          (combined, c) => new NewsDetailDisplay
+                          {
+                              Id = combined.nd.Id,
+                              Code = combined.nd.Code,
+                              Name = combined.nd.Name,
+                              Status = combined.nd.Status,
+                              Image = combined.nd.Image,
+                              CategoryNewId = combined.nd.CategoryNewId,
+                              CategoryId = combined.nd.CategoryId,
+                              TitleSeo = combined.nd.TitleSeo,
+                              MetaKeyWords = combined.nd.MetaKeyWords,
+                              MetaDescription = combined.nd.MetaDescription,
+                              CreatedDate = combined.nd.CreatedDate,
+                              ModifiedDate = combined.nd.ModifiedDate,
+                              CateNewName = combined.cn.Name,
+                              CateName = c.Name,
+                              LinkName = rgx.Replace(combined.nd.Name, "-").ToLower()
+                          })
+                    .OrderByDescending(x => x.CreatedDate)
+                    .ToListAsync();
+
+                if (products == null || products.Count == 0)
+                {
+                    return NotFound("No matching records found.");
+                }
+
+                return Ok(products);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error retrieving search results: {ex.Message}");
+                return StatusCode(500, "An error occurred while processing the request.");
+            }
+        }
 
         // GET: api/NewsDetails/5
         [HttpGet("{id}")]
@@ -325,7 +386,7 @@ namespace Spectra.Controllers
                             Code = x.Code,
                             Image = x.Image,
                             CategoryId = x.CategoryId,
-                            Description = x.Description,
+                            Description = x.Description.Substring(0, 120),
                             Status = x.Status,
                             TitleSeo = x.TitleSeo,
                             MetaKeyWords = x.MetaKeyWords,
@@ -333,6 +394,7 @@ namespace Spectra.Controllers
                             CreatedDate = x.CreatedDate,
                             LinkName = rgx.Replace(x.Name, "-").ToLower()
                         })
+                        .Take(3)
                         .ToListAsync();
 
                     if (data == null || data.Count == 0)

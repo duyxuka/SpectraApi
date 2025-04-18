@@ -180,6 +180,7 @@ namespace Spectra.Controllers
                   ProductName = x.ProductName,
                   ProductSeri = x.ProductSeri,
                   Description = x.Description,
+                  StoreCode = x.StoreCode,
                   Image = x.Image,
                   Status = x.Status,
                   StartDate = x.StartDate,

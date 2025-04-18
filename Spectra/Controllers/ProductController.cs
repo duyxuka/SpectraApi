@@ -650,6 +650,86 @@ namespace Spectra.Controllers
             }
         }
 
+        [HttpGet("detail/{id}")]
+        [AllowAnonymous]
+        public async Task<IActionResult> GetProductDetailAll(int id)
+        {
+            try
+            {
+                var product = await _context.Products
+                    .Where(p => p.Id == id)
+                    .Include(p => p.Category)
+                    .Include(p => p.Gift)
+                    .Include(p => p.ProductVariants)
+                        .ThenInclude(v => v.ProductVariantAttributes)
+                            .ThenInclude(va => va.ValueAttribute)
+                                .ThenInclude(a => a.Attribute)
+                    .AsNoTracking()
+                    .FirstOrDefaultAsync();
+
+                if (product == null)
+                    return NotFound();
+
+                // Tính % giảm giá
+                float giaphantram = product.Price > 0 ? 100 - ((product.SalePrice * 100) / product.Price) : 0;
+
+                var result = new
+                {
+                    Id = product.Id,
+                    Code = product.Code,
+                    Name = product.Name,
+                    Description = product.Description,
+                    TitleDescription = product.TitleDescription,
+                    Instruct = product.Instruct,
+                    TitleSeo = product.TitleSeo,
+                    MetaKeyWords = product.MetaKeyWords,
+                    MetaDescription = product.MetaDescription,
+                    Images = product.Images,
+                    Price = product.Price,
+                    SalePrice = product.SalePrice,
+                    Option = product.Option,
+                    Start = product.Start,
+                    Ends = product.Ends,
+                    CreatedDate = product.CreatedDate,
+                    ModifiedDate = product.ModifiedDate,
+                    JobId = product.JobId,
+                    WarrantyMonth = product.WarrantyMonth,
+                    ScheduleStatus = product.ScheduleStatus,
+                    Status = product.Status,
+                    Information = product.Information,
+
+                    CategoryId = product.CategoryId,
+                    CategoryName = product.Category?.Name,
+                    CategoryCode = product.Category?.Code,
+
+                    GiftId = product.GiftId,
+                    GiftName = product.Gift?.Name,
+                    GiftPrice = product.Gift?.Price,
+
+                    Giaphantram = giaphantram,
+                    LinkName = product.Name?.Replace(" ", "-").ToLower(),
+
+                    Variants = product.ProductVariants.Select(v => new VariantDto
+                    {
+                        VariantId = v.Id,
+                        Price = v.Price,
+                        SalePrice = v.SalePrice,
+                        Attributes = v.ProductVariantAttributes.Select(va => new AttributeDto
+                        {
+                            AttributeName = va.ValueAttribute.Attribute.Name,
+                            ValueName = va.ValueAttribute.Name
+                        }).ToList()
+                    }).ToList()
+                };
+
+                return Ok(result);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Lỗi khi lấy thông tin sản phẩm: {ex.Message}");
+                return StatusCode(500, "Đã xảy ra lỗi khi xử lý yêu cầu.");
+            }
+        }
 
         // GET: api/Product/5
         [HttpGet("{id}")]
@@ -745,7 +825,7 @@ namespace Spectra.Controllers
                     Images = x.gt.ai.Images,
                     CategoryId = x.gt.ai.CategoryId,
                     GiftId = x.gt.ai.GiftId,
-                    TitleDescription = x.gt.ai.TitleDescription,
+                    TitleDescription = x.gt.ai.TitleDescription.Substring(0, 60),
                     Status = x.gt.ai.Status,
                     CreatedDate = x.gt.ai.CreatedDate,
                     ModifiedDate = x.gt.ai.ModifiedDate,

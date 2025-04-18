@@ -39,7 +39,9 @@ namespace Spectra.Migrations
 
                     b.Property<string>("Password");
 
-                    b.Property<byte>("Role");
+                    b.Property<string>("PasswordHash");
+
+                    b.Property<string>("PasswordSalt");
 
                     b.Property<bool>("Status");
 
@@ -903,6 +905,23 @@ namespace Spectra.Migrations
                     b.ToTable("Spectra_Payment");
                 });
 
+            modelBuilder.Entity("Spectra.Models.Permissions", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasAnnotation("SqlServer:ValueGenerationStrategy", SqlServerValueGenerationStrategy.IdentityColumn);
+
+                    b.Property<string>("Code");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(100);
+
+                    b.HasKey("Id");
+
+                    b.ToTable("Spectra_Permissions");
+                });
+
             modelBuilder.Entity("Spectra.Models.Policy", b =>
                 {
                     b.Property<int?>("Id")
@@ -922,8 +941,6 @@ namespace Spectra.Migrations
 
                     b.Property<string>("Name")
                         .HasMaxLength(250);
-
-                    b.Property<bool>("Options");
 
                     b.Property<bool>("Status");
 
@@ -1050,6 +1067,50 @@ namespace Spectra.Migrations
                     b.HasKey("Id");
 
                     b.ToTable("Spectra_ProductSeo");
+                });
+
+            modelBuilder.Entity("Spectra.Models.ProductVariant", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasAnnotation("SqlServer:ValueGenerationStrategy", SqlServerValueGenerationStrategy.IdentityColumn);
+
+                    b.Property<DateTime>("CreatedDate");
+
+                    b.Property<DateTime>("ModifiedDate");
+
+                    b.Property<float>("Price");
+
+                    b.Property<int?>("ProductId");
+
+                    b.Property<float>("SalePrice");
+
+                    b.Property<bool>("Status");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ProductId");
+
+                    b.ToTable("Spectra_ProductVariant");
+                });
+
+            modelBuilder.Entity("Spectra.Models.ProductVariantAttributes", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasAnnotation("SqlServer:ValueGenerationStrategy", SqlServerValueGenerationStrategy.IdentityColumn);
+
+                    b.Property<int>("ProductVariantId");
+
+                    b.Property<int>("ValueAttributeId");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ProductVariantId");
+
+                    b.HasIndex("ValueAttributeId");
+
+                    b.ToTable("Spectra_ProductVariant_Attributes");
                 });
 
             modelBuilder.Entity("Spectra.Models.QualityAssessment", b =>
@@ -1220,6 +1281,40 @@ namespace Spectra.Migrations
                     b.ToTable("Spectra_Recrutement");
                 });
 
+            modelBuilder.Entity("Spectra.Models.RolePermissions", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasAnnotation("SqlServer:ValueGenerationStrategy", SqlServerValueGenerationStrategy.IdentityColumn);
+
+                    b.Property<int>("PermissionId");
+
+                    b.Property<int>("RoleId");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("PermissionId");
+
+                    b.HasIndex("RoleId");
+
+                    b.ToTable("Spectra_RolePermissions");
+                });
+
+            modelBuilder.Entity("Spectra.Models.Roles", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasAnnotation("SqlServer:ValueGenerationStrategy", SqlServerValueGenerationStrategy.IdentityColumn);
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(100);
+
+                    b.HasKey("Id");
+
+                    b.ToTable("Spectra_Roles");
+                });
+
             modelBuilder.Entity("Spectra.Models.Routesr", b =>
                 {
                     b.Property<int?>("Id")
@@ -1369,6 +1464,25 @@ namespace Spectra.Migrations
                     b.HasKey("Id");
 
                     b.ToTable("Spectra_UserLanding");
+                });
+
+            modelBuilder.Entity("Spectra.Models.UserRoles", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasAnnotation("SqlServer:ValueGenerationStrategy", SqlServerValueGenerationStrategy.IdentityColumn);
+
+                    b.Property<int>("RoleId");
+
+                    b.Property<int>("UserId");
+
+                    b.Property<int>("UserType");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("RoleId");
+
+                    b.ToTable("Spectra_UserRoles");
                 });
 
             modelBuilder.Entity("Spectra.Models.ValueAttribute", b =>
@@ -1766,6 +1880,26 @@ namespace Spectra.Migrations
                         .HasForeignKey("GiftId");
                 });
 
+            modelBuilder.Entity("Spectra.Models.ProductVariant", b =>
+                {
+                    b.HasOne("Spectra.Models.Product", "Product")
+                        .WithMany("ProductVariants")
+                        .HasForeignKey("ProductId");
+                });
+
+            modelBuilder.Entity("Spectra.Models.ProductVariantAttributes", b =>
+                {
+                    b.HasOne("Spectra.Models.ProductVariant", "ProductVariant")
+                        .WithMany("ProductVariantAttributes")
+                        .HasForeignKey("ProductVariantId")
+                        .OnDelete(DeleteBehavior.Cascade);
+
+                    b.HasOne("Spectra.Models.ValueAttribute", "ValueAttribute")
+                        .WithMany("ProductVariantAttributes")
+                        .HasForeignKey("ValueAttributeId")
+                        .OnDelete(DeleteBehavior.Cascade);
+                });
+
             modelBuilder.Entity("Spectra.Models.Question", b =>
                 {
                     b.HasOne("Spectra.Models.Product", "Product")
@@ -1779,6 +1913,19 @@ namespace Spectra.Migrations
                     b.HasOne("Spectra.Models.ServiceDetail", "ServiceDetail")
                         .WithMany("QuestionServices")
                         .HasForeignKey("ServiceDetailId");
+                });
+
+            modelBuilder.Entity("Spectra.Models.RolePermissions", b =>
+                {
+                    b.HasOne("Spectra.Models.Permissions", "Permissions")
+                        .WithMany("RolePermissions")
+                        .HasForeignKey("PermissionId")
+                        .OnDelete(DeleteBehavior.Cascade);
+
+                    b.HasOne("Spectra.Models.Roles", "Roles")
+                        .WithMany("RolePermissions")
+                        .HasForeignKey("RoleId")
+                        .OnDelete(DeleteBehavior.Cascade);
                 });
 
             modelBuilder.Entity("Spectra.Models.SeriProduct", b =>
@@ -1801,6 +1948,14 @@ namespace Spectra.Migrations
                     b.HasOne("Spectra.Models.Service", "Service")
                         .WithMany("ServiceDetails")
                         .HasForeignKey("ServiceId");
+                });
+
+            modelBuilder.Entity("Spectra.Models.UserRoles", b =>
+                {
+                    b.HasOne("Spectra.Models.Roles", "Roles")
+                        .WithMany()
+                        .HasForeignKey("RoleId")
+                        .OnDelete(DeleteBehavior.Cascade);
                 });
 
             modelBuilder.Entity("Spectra.Models.ValueAttribute", b =>

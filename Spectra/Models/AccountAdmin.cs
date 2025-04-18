@@ -19,10 +19,12 @@ namespace Spectra.Models
         [MinLength(2, ErrorMessage = "This field can't least 2 characters")]
         public string Name { get; set; }
         public string Email { get; set; }
-        public string Password { get; set; }
-        public byte Role { get; set; }
+        public string Password { get; set; } = "null";
+        public string PasswordHash { get; set; } // Thêm trường này
+        public string PasswordSalt { get; set; } // Thêm trường này
         public bool Status { get; set; }
         public DateTime CreatedDate { get; set; }
         public DateTime ModifiedDate { get; set; }
+        public ICollection<UserRoles> UserRoles { get; set; }
     }
 }

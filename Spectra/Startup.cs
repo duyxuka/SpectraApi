@@ -114,7 +114,7 @@ namespace Spectra
             };
 
                 return ipAddresses.Any(ip => allowedIPs.Contains(ip));
-            }).WithOrigins("https://spectrababy.com.vn","https://spectra.vn", "https://admin.spectrababy.com.vn", "https://spectrababy.vn", "https://spectra.com.vn", "https://adicon.vn").AllowAnyHeader().AllowAnyMethod().AllowCredentials()));
+            }).WithOrigins("https://spectrababy.com.vn","https://spectra.vn", "https://admin.spectrababy.com.vn", "https://spectrababy.vn", "https://spectra.com.vn", "https://adicon.vn", "http://localhost:4200").AllowAnyHeader().AllowAnyMethod().AllowCredentials()));
             services.AddScoped<FileServices>();
             services.Configure<FormOptions>(o =>
             {
@@ -154,6 +154,7 @@ namespace Spectra
                 options.EnableForHttps = true;
 
             });
+            services.AddHttpContextAccessor();
             services.AddScoped<IVnPayService, VnPayService>();
             services.AddScoped<IServiceManagercs, ServiceManager>();
             services.AddScoped<IServiceVoucher, ServiceVoucher>();

@@ -32,5 +32,6 @@ namespace Spectra.Models
         public DateTime CreatedDate { get; set; }
         public DateTime ModifiedDate { get; set; }
         public ICollection<Order> orders { get; set; }
+        public ICollection<UserRoles> UserRoles { get; set; }
     }
 }

@@ -232,7 +232,7 @@ namespace Spectra.Controllers
                         LinkName = rgx.Replace(x.gt.ai.Name, "-").ToLower()
                     })
                     .AsNoTracking()
-                    .OrderBy(x => x.Name)
+                    .OrderBy(x => x.Id)
                     .Skip((currentPage - 1) * pagesize)
                     .Take(pagesize)
                     .ToList();
