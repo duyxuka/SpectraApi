@@ -14,6 +14,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Spectra.Models;
+using Spectra.Models.Authorize;
 
 namespace Spectra.Controllers
 {
@@ -32,6 +33,7 @@ namespace Spectra.Controllers
 
         // GET: api/WarrantyGold
         [HttpGet]
+        [BinaryAuthorize("WarrantiesGold", ActionType.Xem)]
         public IEnumerable<WarrantyGold> GetWarrantyGolds()
         {
             return _context.WarrantyGolds;
@@ -39,6 +41,7 @@ namespace Spectra.Controllers
 
         [HttpGet]
         [Route("WrantyGoldPage")]
+        [BinaryAuthorize("Warranties", ActionType.Xem)]
         public IActionResult WarrantyResult(int? page, int pagesize = 5)
         {
             string pattern = "[ ,+(){}.*+?^$|]";
@@ -95,7 +98,7 @@ namespace Spectra.Controllers
 
         [HttpGet]
         [Route("excel")]
-        [AllowAnonymous]
+        [BinaryAuthorize("Warranties", ActionType.Sua)]
         public async Task<FileResult> ExportExcel()
         {
             var data = await _context.WarrantyGolds.ToListAsync();
@@ -294,6 +297,7 @@ namespace Spectra.Controllers
 
         [HttpPost]
         [Route("SendEmailWarrantyConfirm")]
+        [BinaryAuthorize("Warranties", ActionType.Sua)]
         public ActionResult SendEmailWarrantyConfirm([FromBody] WarrantyGold warrantyGold)
         {
             try
@@ -443,6 +447,7 @@ namespace Spectra.Controllers
         }
         // GET: api/WarrantyGold/5
         [HttpGet("{id}")]
+        [BinaryAuthorize("Warranties", ActionType.Xem)]
         public async Task<IActionResult> GetWarrantyGold([FromRoute] int? id)
         {
             if (!ModelState.IsValid)
@@ -463,6 +468,7 @@ namespace Spectra.Controllers
         // PUT: api/WarrantyGold/5
         [HttpPost]
         [Route("PutWarrantyGold")]
+        [BinaryAuthorize("Warranties", ActionType.Sua)]
         public async Task<IActionResult> PutWarrantyGold([FromBody] WarrantyGold warrantyGold)
         {
             if (!ModelState.IsValid)
@@ -501,6 +507,7 @@ namespace Spectra.Controllers
 
         // DELETE: api/WarrantyGold/5
         [HttpDelete("{id}")]
+        [BinaryAuthorize("Warranties", ActionType.Xoa)]
         public async Task<IActionResult> DeleteWarrantyGold([FromRoute] int? id)
         {
             if (!ModelState.IsValid)

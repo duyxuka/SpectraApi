@@ -8,6 +8,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Spectra.Models;
+using Spectra.Models.Authorize;
 
 namespace Spectra.Controllers
 {
@@ -26,6 +27,7 @@ namespace Spectra.Controllers
 
         // GET: api/Routesr
         [HttpGet]
+        [BinaryAuthorize("Router", ActionType.Xem)]
         public IEnumerable<Routesr> GetRoutesrs()
         {
             return _context.Routesrs;
@@ -41,6 +43,7 @@ namespace Spectra.Controllers
 
         // GET: api/Routesr/5
         [HttpGet("{id}")]
+        [BinaryAuthorize("Router", ActionType.Xem)]
         public async Task<IActionResult> GetRoutesr([FromRoute] int? id)
         {
             if (!ModelState.IsValid)
@@ -61,6 +64,7 @@ namespace Spectra.Controllers
         // PUT: api/Routesr/5
         [HttpPost]
         [Route("PutRoutesr")]
+        [BinaryAuthorize("Router", ActionType.Sua)]
         public async Task<IActionResult> PutRoutesr([FromBody] Routesr routesr)
         {
             if (!ModelState.IsValid)
@@ -83,6 +87,7 @@ namespace Spectra.Controllers
 
         // POST: api/Routesr
         [HttpPost]
+        [BinaryAuthorize("Router", ActionType.Them)]
         public async Task<IActionResult> PostRoutesr([FromBody] Routesr routesr)
         {
             if (!ModelState.IsValid)
@@ -99,6 +104,7 @@ namespace Spectra.Controllers
 
         // DELETE: api/Routesr/5
         [HttpDelete("{id}")]
+        [BinaryAuthorize("Router", ActionType.Xoa)]
         public async Task<IActionResult> DeleteRoutesr([FromRoute] int? id)
         {
             if (!ModelState.IsValid)

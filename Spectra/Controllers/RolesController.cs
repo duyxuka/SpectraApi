@@ -2,15 +2,18 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Spectra.Models;
+using Spectra.Models.Authorize;
 
 namespace Spectra.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
+    [Authorize]
     public class RolesController : ControllerBase
     {
         private readonly AppDBContext _context;
@@ -22,13 +25,28 @@ namespace Spectra.Controllers
 
         // GET: api/Roles
         [HttpGet]
+        [BinaryAuthorize("Role", ActionType.Xem)]
         public IEnumerable<Roles> GetRoles()
         {
             return _context.Roles;
         }
 
+        [HttpGet]
+        [Route("GetAdminRoles")]
+        [BinaryAuthorize("Role", ActionType.Xem)]
+        public async Task<IActionResult> GetAdminRoles()
+        {
+            var adminRoles = await _context.Roles
+                .Where(r => r.RoleType == "Admin") // Lọc các vai trò có RoleType là "Admin"
+                .Select(r => new { r.Id, r.Name }) // Chỉ lấy Id và Name để trả về
+                .ToListAsync();
+
+            return Ok(adminRoles);
+        }
+
         // GET: api/Roles/5
         [HttpGet("{id}")]
+        [BinaryAuthorize("Role", ActionType.Xem)]
         public async Task<IActionResult> GetRoles([FromRoute] int id)
         {
             if (!ModelState.IsValid)
@@ -48,6 +66,7 @@ namespace Spectra.Controllers
 
         // PUT: api/Roles/5
         [HttpPut("{id}")]
+        [BinaryAuthorize("Role", ActionType.Sua)]
         public async Task<IActionResult> PutRoles([FromRoute] int id, [FromBody] Roles roles)
         {
             if (!ModelState.IsValid)
@@ -83,6 +102,7 @@ namespace Spectra.Controllers
 
         // POST: api/Roles
         [HttpPost]
+        [BinaryAuthorize("Role", ActionType.Them)]
         public async Task<IActionResult> PostRoles([FromBody] Roles roles)
         {
             if (!ModelState.IsValid)
@@ -98,6 +118,7 @@ namespace Spectra.Controllers
 
         // DELETE: api/Roles/5
         [HttpDelete("{id}")]
+        [BinaryAuthorize("Role", ActionType.Xoa)]
         public async Task<IActionResult> DeleteRoles([FromRoute] int id)
         {
             if (!ModelState.IsValid)

@@ -12,6 +12,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Spectra.Models;
+using Spectra.Models.Authorize;
 using Spectra.Services;
 
 namespace Spectra.Controllers
@@ -128,6 +129,7 @@ namespace Spectra.Controllers
 
         [HttpPost]
         [Route("ProductHangfire")]
+        [BinaryAuthorize("Product", ActionType.Sua)]
         public async Task<IActionResult> ProductHangfire([FromBody] Product product)
         {
             if (!ModelState.IsValid)
@@ -177,6 +179,7 @@ namespace Spectra.Controllers
 
         [HttpPost]
         [Route("ProductHangfireCancel")]
+        [BinaryAuthorize("Product", ActionType.Sua)]
         public IActionResult ProductHangfireCancel([FromBody] Product product)
         {
             if (!ModelState.IsValid)
@@ -883,6 +886,7 @@ namespace Spectra.Controllers
 
         [HttpGet]
         [Route("TrashProduct")]
+        [BinaryAuthorize("Product", ActionType.Xoa)]
         public IEnumerable<Product> GetTrashProduct()
         {
             var data = _context.Products
@@ -906,6 +910,7 @@ namespace Spectra.Controllers
 
         [HttpPost]
         [Route("RepeatProduct")]
+        [BinaryAuthorize("Product", ActionType.Xoa)]
         public async Task<IActionResult> RepeatProduct([FromBody] Product product)
         {
             if (!ModelState.IsValid)
@@ -931,6 +936,7 @@ namespace Spectra.Controllers
 
         [HttpPost]
         [Route("TemporaryDelete")]
+        [BinaryAuthorize("Product", ActionType.Xoa)]
         public async Task<IActionResult> TemporaryDelete([FromBody] Product product)
         {
             if (!ModelState.IsValid)
@@ -959,6 +965,7 @@ namespace Spectra.Controllers
         // PUT: api/Product/5
         [HttpPost]
         [Route("PutProduct")]
+        [BinaryAuthorize("Product", ActionType.Sua)]
         public async Task<IActionResult> PutProduct([FromBody] Product product)
         {
             if (!ModelState.IsValid)
@@ -985,6 +992,7 @@ namespace Spectra.Controllers
 
         // POST: api/Product
         [HttpPost]
+        [BinaryAuthorize("Product", ActionType.Them)]
         public async Task<IActionResult> PostProduct([FromBody] Product product)
         {
             if (!ModelState.IsValid)
@@ -1002,6 +1010,7 @@ namespace Spectra.Controllers
 
         // DELETE: api/Product/5
         [HttpDelete("{id}")]
+        [BinaryAuthorize("Product", ActionType.Xoa)]
         public async Task<IActionResult> DeleteProduct([FromRoute] int? id)
         {
             if (!ModelState.IsValid)

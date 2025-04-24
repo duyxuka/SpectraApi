@@ -9,6 +9,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Spectra.Models;
+using Spectra.Models.Authorize;
 
 namespace Spectra.Controllers
 {
@@ -58,6 +59,7 @@ namespace Spectra.Controllers
         }
         [HttpGet]
         [Route("SeriProductPage")]
+        [BinaryAuthorize("SeriProduct", ActionType.Xem)]
         public IActionResult SeriProductResult(int? page, int pagesize = 5)
         {
             string pattern = "[ ,+(){}.*+?^$|]";
@@ -181,7 +183,7 @@ namespace Spectra.Controllers
         // PUT: api/SeriProduct/5
         [HttpPost]
         [Route("PutSeriProduct")]
-        [AllowAnonymous]
+        [BinaryAuthorize("SeriProduct", ActionType.Sua)]
         public async Task<IActionResult> PutSeriProduct([FromBody] SeriProduct seriProduct)
         {
             if (!ModelState.IsValid)
@@ -218,6 +220,7 @@ namespace Spectra.Controllers
 
         // POST: api/SeriProduct
         [HttpPost]
+        [BinaryAuthorize("SeriProduct", ActionType.Them)]
         public async Task<IActionResult> PostSeriProduct([FromBody] SeriProduct seriProduct)
         {
             if (!ModelState.IsValid)
@@ -234,6 +237,7 @@ namespace Spectra.Controllers
 
         // DELETE: api/SeriProduct/5
         [HttpDelete("{id}")]
+        [BinaryAuthorize("SeriProduct", ActionType.Xoa)]
         public async Task<IActionResult> DeleteSeriProduct([FromRoute] int? id)
         {
             if (!ModelState.IsValid)

@@ -92,7 +92,7 @@ namespace Spectra
                 });
             });
 
-            services.AddCors(c => c.AddPolicy("AddCors", builder => builder.WithOrigins("https://spectrababy.com.vn", "https://spectra.vn", "https://admin.spectrababy.com.vn", "https://spectrababy.vn", "https://spectra.com.vn", "https://adicon.vn", "http://localhost:4200").AllowAnyHeader().AllowAnyMethod().AllowCredentials()));
+            services.AddCors(c => c.AddPolicy("AddCors", builder => builder.WithOrigins("https://spectrababy.com.vn", "https://spectra.vn", "https://admin.spectrababy.com.vn", "https://spectrababy.vn", "https://spectra.com.vn", "https://adicon.vn", "http://localhost:4200", "http://localhost:52059").AllowAnyHeader().AllowAnyMethod().AllowCredentials()));
             services.AddCors(c => c.AddPolicy("AddCorsIPN", builder => builder.SetIsOriginAllowed(origin =>
             {
                  //Convert domain to IP 
@@ -114,7 +114,7 @@ namespace Spectra
             };
 
                 return ipAddresses.Any(ip => allowedIPs.Contains(ip));
-            }).WithOrigins("https://spectrababy.com.vn","https://spectra.vn", "https://admin.spectrababy.com.vn", "https://spectrababy.vn", "https://spectra.com.vn", "https://adicon.vn", "http://localhost:4200").AllowAnyHeader().AllowAnyMethod().AllowCredentials()));
+            }).WithOrigins("https://spectrababy.com.vn","https://spectra.vn", "https://admin.spectrababy.com.vn", "https://spectrababy.vn", "https://spectra.com.vn", "https://adicon.vn", "http://localhost:4200", "http://localhost:52059").AllowAnyHeader().AllowAnyMethod().AllowCredentials()));
             services.AddScoped<FileServices>();
             services.Configure<FormOptions>(o =>
             {

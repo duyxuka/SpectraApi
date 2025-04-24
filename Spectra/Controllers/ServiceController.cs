@@ -9,6 +9,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Spectra.Models;
+using Spectra.Models.Authorize;
 
 namespace Spectra.Controllers
 {
@@ -87,6 +88,7 @@ namespace Spectra.Controllers
         // PUT: api/Service/5
         [HttpPost]
         [Route("PutService")]
+        [BinaryAuthorize("Service", ActionType.Sua)]
         public async Task<IActionResult> PutService([FromBody] Service service)
         {
             if (!ModelState.IsValid)
@@ -112,6 +114,7 @@ namespace Spectra.Controllers
 
         // POST: api/Service
         [HttpPost]
+        [BinaryAuthorize("Service", ActionType.Them)]
         public async Task<IActionResult> PostService([FromBody] Service service)
         {
             if (!ModelState.IsValid)
@@ -127,6 +130,7 @@ namespace Spectra.Controllers
 
         // DELETE: api/Service/5
         [HttpDelete("{id}")]
+        [BinaryAuthorize("Service", ActionType.Xoa)]
         public async Task<IActionResult> DeleteService([FromRoute] int? id)
         {
             if (!ModelState.IsValid)

@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -11,6 +12,7 @@ namespace Spectra.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
+    [Authorize]
     public class PermissionsController : ControllerBase
     {
         private readonly AppDBContext _context;
@@ -94,6 +96,29 @@ namespace Spectra.Controllers
             await _context.SaveChangesAsync();
 
             return CreatedAtAction("GetPermissions", new { id = permissions.Id }, permissions);
+        }
+
+        [HttpPost("SaveMultiple")]
+        public async Task<IActionResult> SaveMultiplePermissions([FromBody] List<Permissions> permissionsList)
+        {
+            foreach (var item in permissionsList)
+            {
+                var existing = await _context.Permissions
+                    .FirstOrDefaultAsync(x => x.RolesId == item.RolesId && x.ModulesId == item.ModulesId);
+
+                if (existing != null)
+                {
+                    existing.PermissionValue = item.PermissionValue;
+                    _context.Permissions.Update(existing);
+                }
+                else
+                {
+                    _context.Permissions.Add(item);
+                }
+            }
+
+            await _context.SaveChangesAsync();
+            return Ok();
         }
 
         // DELETE: api/Permissions/5

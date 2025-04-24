@@ -11,12 +11,12 @@ namespace Spectra.Models
     public class Permissions
     {
         [Key]
-        public int Id { get; set; }
-
-        [Required]
-        [MaxLength(100)]
-        public string Name { get; set; } // ViewUser, EditTask, ManageOrder...
-        public string Code { get; set; }
-        public ICollection<RolePermissions> RolePermissions { get; set; }
+        public int Id { get; set; } // Không dùng được nếu dùng composite key -> bỏ dòng này
+        public int RolesId { get; set; }
+        public Roles Roles { get; set; }
+        public int ModulesId { get; set; }
+        public Modules Modules { get; set; }
+        public int PermissionValue { get; set; } // Bitwise: View=1, Create=2, Update=4, Delete=8 
     }
+
 }

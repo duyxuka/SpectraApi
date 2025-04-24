@@ -4,10 +4,10 @@ using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Cors;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Spectra.Models;
+using Spectra.Models.Authorize;
 
 namespace Spectra.Controllers
 {
@@ -83,7 +83,6 @@ namespace Spectra.Controllers
 
         // POST: api/Banner
         [HttpPost]
-        [AllowAnonymous]
         public async Task<IActionResult> PostBanner([FromBody] Banner banner)
         {
             if (!ModelState.IsValid)
@@ -125,7 +124,6 @@ namespace Spectra.Controllers
         }
         [HttpGet]
         [Route("get-data-chart")]
-        [AllowAnonymous]
         public IActionResult GetDataToChart()
         {
             List<int> datas = new List<int>();

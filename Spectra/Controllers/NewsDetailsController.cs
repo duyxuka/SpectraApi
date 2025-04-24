@@ -9,6 +9,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Spectra.Models;
+using Spectra.Models.Authorize;
 
 namespace Spectra.Controllers
 {
@@ -137,7 +138,6 @@ namespace Spectra.Controllers
 
         [HttpGet]
         [Route("NewAdmin")]
-        [AllowAnonymous]
         public IEnumerable<NewsDetailDisplay> GetNewsDetailsAdmin()
         {
             string pattern = "[ ,+(){}.*+?^$|]";
@@ -417,6 +417,7 @@ namespace Spectra.Controllers
         // PUT: api/NewsDetails/5
         [HttpPost]
         [Route("PutNewsDetails")]
+        [BinaryAuthorize("NewsDetail", ActionType.Sua)]
         public async Task<IActionResult> PutNewsDetail([FromBody] NewsDetail newsDetail)
         {
             if (!ModelState.IsValid)
@@ -439,6 +440,7 @@ namespace Spectra.Controllers
 
         // POST: api/NewsDetails
         [HttpPost]
+        [BinaryAuthorize("NewsDetail", ActionType.Them)]
         public async Task<IActionResult> PostNewsDetail([FromBody] NewsDetail newsDetail)
         {
             if (!ModelState.IsValid)
@@ -454,6 +456,7 @@ namespace Spectra.Controllers
 
         // DELETE: api/NewsDetails/5
         [HttpDelete("{id}")]
+        [BinaryAuthorize("NewsDetail", ActionType.Xoa)]
         public async Task<IActionResult> DeleteNewsDetail([FromRoute] int? id)
         {
             if (!ModelState.IsValid)

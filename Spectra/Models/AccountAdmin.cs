@@ -12,7 +12,7 @@ namespace Spectra.Models
     public class AccountAdmin
     {
         [Key]
-        public int? Id { get; set; }
+        public int Id { get; set; }
         [Required(ErrorMessage = "This field can't blank")]
         public string Code { get; set; }
         [MaxLength(250, ErrorMessage = "Max of length is 30 characters")]
@@ -25,6 +25,10 @@ namespace Spectra.Models
         public bool Status { get; set; }
         public DateTime CreatedDate { get; set; }
         public DateTime ModifiedDate { get; set; }
-        public ICollection<UserRoles> UserRoles { get; set; }
+        public ICollection<UserRoleAdmin> UserRoleAdmins { get; set; }
+    }
+    public class AdminDTO : AccountAdmin
+    {
+        public List<string> RoleNames { get; set; }
     }
 }

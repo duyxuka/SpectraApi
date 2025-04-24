@@ -252,18 +252,22 @@ namespace Spectra.Models
             {
                 entity.Property(e => e.Id).ValueGeneratedOnAdd();
             });
-            modelBuilder.Entity<RolePermissions>(entity =>
+
+            modelBuilder.Entity<Modules>(entity =>
             {
                 entity.Property(e => e.Id).ValueGeneratedOnAdd();
             });
-            modelBuilder.Entity<UserRoles>(entity =>
+
+            modelBuilder.Entity<UserRoleAdmin>(entity =>
             {
                 entity.Property(e => e.Id).ValueGeneratedOnAdd();
             });
-            modelBuilder.Entity<UserTypes>(entity =>
+            modelBuilder.Entity<UserRoleCustomer>(entity =>
             {
                 entity.Property(e => e.Id).ValueGeneratedOnAdd();
             });
+
+
             // Set Unique Constraint
             modelBuilder.Entity<AccountUser>().HasIndex(accountuser => accountuser.Email).IsUnique();
             modelBuilder.Entity<AccountUser>().HasIndex(accountuser => accountuser.Code).IsUnique();
@@ -335,8 +339,8 @@ namespace Spectra.Models
         public DbSet<ProductVariantAttributes> ProductVariantAttributes { get; set; }
         public DbSet<Roles> Roles { get; set; }
         public DbSet<Permissions> Permissions { get; set; }
-        public DbSet<RolePermissions> RolePermissions { get; set; }
-        public DbSet<UserRoles> UserRoles { get; set; }
-        public DbSet<UserTypes> UserTypes { get; set; }
+        public DbSet<UserRoleAdmin> UserRoleAdmins { get; set; }
+        public DbSet<UserRoleCustomer> UserRoleCustomers { get; set; }
+        public DbSet<Modules> Modules { get; set; }
     }
 }

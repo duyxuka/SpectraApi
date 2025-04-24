@@ -3,15 +3,18 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Spectra.Models;
+using Spectra.Models.Authorize;
 
 namespace Spectra.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
+    [Authorize]
     public class PageResultController : ControllerBase
     {
         private readonly AppDBContext _context;
@@ -22,6 +25,7 @@ namespace Spectra.Controllers
         }
         [HttpGet]
         [Route("Product")]
+        [AllowAnonymous]
         public IActionResult ProductResult(int? page, int pagesize = 6)
         {
             string pattern = "[ ,+(){}.*+?^$|]";
@@ -84,6 +88,7 @@ namespace Spectra.Controllers
 
         [HttpGet]
         [Route("ProductAdmin")]
+        [BinaryAuthorize("Product", ActionType.Xem)]
         public IActionResult ProductResultAdmin(int? page, int pagesize = 5)
         {
             string pattern = "[ ,+(){}.*+?^$|]";
@@ -141,6 +146,7 @@ namespace Spectra.Controllers
 
         [HttpGet]
         [Route("ProductNew")]
+        [AllowAnonymous]
         public IActionResult ProductNew(int? page, int pagesize = 6)
         {
             string pattern = "[ ,+(){}.*+?^$|]";
@@ -199,6 +205,7 @@ namespace Spectra.Controllers
         }
         [HttpGet]
         [Route("ProductSale")]
+        [AllowAnonymous]
         public IActionResult ProductSale(int? page, int pagesize = 6)
         {
             string pattern = "[ ,+(){}.*+?^$|]";
@@ -258,6 +265,7 @@ namespace Spectra.Controllers
 
         [HttpGet]
         [Route("ProductPriceASC")]
+        [AllowAnonymous]
         public IActionResult ProductPriceASC(int? page, int pagesize = 6)
         {
             string pattern = "[ ,+(){}.*+?^$|]";
@@ -317,6 +325,7 @@ namespace Spectra.Controllers
 
         [HttpGet]
         [Route("ProductPriceASCBrand")]
+        [AllowAnonymous]
         public IActionResult ProductPriceASCBrand(int? page, int pagesize = 6)
         {
             string pattern = "[ ,+(){}.*+?^$|]";
@@ -376,6 +385,7 @@ namespace Spectra.Controllers
 
         [HttpGet]
         [Route("ProductPriceDSC")]
+        [AllowAnonymous]
         public IActionResult ProductPriceDSC(int? page, int pagesize = 6)
         {
             string pattern = "[ ,+(){}.*+?^$|]";
@@ -436,6 +446,7 @@ namespace Spectra.Controllers
 
         [HttpGet]
         [Route("ProductPriceDSCBrand")]
+        [AllowAnonymous]
         public IActionResult ProductPriceDSCBrand(int? page, int pagesize = 6)
         {
             string pattern = "[ ,+(){}.*+?^$|]";
@@ -495,6 +506,7 @@ namespace Spectra.Controllers
 
         [HttpGet]
         [Route("WelcomeCategory/{id}")]
+        [AllowAnonymous]
         public IActionResult WelcomeCategory([FromRoute] int? id, int? page, int pagesize = 3)
         {
             string pattern = "[ ,+(){}.*+?^$|]";
@@ -551,6 +563,7 @@ namespace Spectra.Controllers
 
         [HttpGet]
         [Route("NewsDetails")]
+        [AllowAnonymous]
         public IActionResult NewsDetails(int? page, int pagesize = 6)
         {
             string pattern = "[ ,+(){}.*+?^$|]";
@@ -609,6 +622,7 @@ namespace Spectra.Controllers
 
         [HttpGet]
         [Route("NewsDetailsAdmin")]
+        [AllowAnonymous]
         public IActionResult NewsDetailsAdmin(int? page, int pagesize = 5)
         {
             string pattern = "[ ,+(){}.*+?^$|]";
@@ -664,6 +678,7 @@ namespace Spectra.Controllers
 
         [HttpGet]
         [Route("NewsDetailsASC")]
+        [AllowAnonymous]
         public IActionResult NewsDetailsASC(int? page, int pagesize = 6)
         {
             string pattern = "[ ,+(){}.*+?^$|]";
@@ -722,6 +737,7 @@ namespace Spectra.Controllers
 
         [HttpGet]
         [Route("getcategorynew/{id}")]
+        [AllowAnonymous]
         public IActionResult NewsDetailsCategory([FromRoute] int? id, int? page, int pagesize = 4)
         {
             string pattern = "[ ,+(){}.*+?^$|]";
@@ -779,6 +795,7 @@ namespace Spectra.Controllers
 
         [HttpGet]
         [Route("getnewcateDT/{id}")]
+        [AllowAnonymous]
         public IActionResult NewsDetailsCategoryDT([FromRoute] int? id, int? page, int pagesize = 3)
         {
             string pattern = "[ ,+(){}.*+?^$|]";
@@ -837,6 +854,7 @@ namespace Spectra.Controllers
 
         [HttpGet]
         [Route("getServiceId/{id}")]
+        [AllowAnonymous]
         public IActionResult getServiceId([FromRoute] int? id, int? page, int pagesize = 6)
         {
             string pattern = "[ ,+(){}.*+?^$|]";
@@ -895,6 +913,7 @@ namespace Spectra.Controllers
 
         [HttpGet]
         [Route("getcategoryID/{id}")]
+        [AllowAnonymous]
         public IActionResult getcategoryID([FromRoute] int? id, int? page, int pagesize = 6)
         {
             string pattern = "[ ,+(){}.*+?^$|]";
@@ -961,6 +980,7 @@ namespace Spectra.Controllers
 
         [HttpGet]
         [Route("WelcomeDetail")]
+        [BinaryAuthorize("WelcomeDetail", ActionType.Xem)]
         public IActionResult WelcomeDetailResult(int? page, int pagesize = 5)
         {
             string pattern = "[ ,+(){}.*+?^$|]";
@@ -1012,6 +1032,7 @@ namespace Spectra.Controllers
 
         [HttpGet]
         [Route("ServiceDetail")]
+        [BinaryAuthorize("ServiceDetail", ActionType.Xem)]
         public IActionResult ServiceDetail(int? page, int pagesize = 5)
         {
             string pattern = "[ ,+(){}.*+?^$|]";

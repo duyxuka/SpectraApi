@@ -8,6 +8,7 @@ namespace Spectra.Models
     public class AuthenticatedResponse
     {
         public string Token { get; set; }
+        public string Role { get; set; }
         public object User { get; set; }
     }
 }

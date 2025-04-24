@@ -17,7 +17,9 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.IdentityModel.Tokens;
+using Newtonsoft.Json;
 using Spectra.Models;
+using Spectra.Models.Authorize;
 
 namespace Spectra.Controllers
 {
@@ -39,6 +41,7 @@ namespace Spectra.Controllers
 
         // GET: api/AccountUser
         [HttpGet]
+        [BinaryAuthorize("User", ActionType.Xem)]
         public IEnumerable<AccountUser> GetAccountUsers()
         {
             return _context.AccountUsers
@@ -50,7 +53,7 @@ namespace Spectra.Controllers
 
         [HttpGet]
         [Route("getAll")]
-        [AllowAnonymous]
+        [BinaryAuthorize("User", ActionType.Xem)]
         public IEnumerable<AccountUser> GetAllAccountUsers()
         {
             return _context.AccountUsers
@@ -67,6 +70,7 @@ namespace Spectra.Controllers
 
         [HttpGet]
         [Route("TrashAccountUsers")]
+        [BinaryAuthorize("User", ActionType.Xoa)]
         public IEnumerable<AccountUser> GetTrashAccountUsers()
         {
             return _context.AccountUsers.Where(b => b.Status == false);
@@ -74,6 +78,7 @@ namespace Spectra.Controllers
 
         // GET: api/AccountUser/5
         [HttpGet("{id}")]
+        [BinaryAuthorize("User", ActionType.Xem)]
         public async Task<IActionResult> GetAccountUser([FromRoute] int? id)
         {
             if (!ModelState.IsValid)
@@ -101,6 +106,7 @@ namespace Spectra.Controllers
         // PUT: api/AccountUser/5
         [HttpPost]
         [Route("PutAccountUser")]
+        [BinaryAuthorize("User", ActionType.Sua)]
         public async Task<IActionResult> PutAccountUser([FromBody] AccountUser accountUser)
         {
             if (!ModelState.IsValid)
@@ -124,6 +130,7 @@ namespace Spectra.Controllers
 
         [HttpPost]
         [Route("RepeatAccountUsers")]
+        [BinaryAuthorize("User", ActionType.Xoa)]
         public async Task<IActionResult> RepeatAccountUsers([FromBody] AccountUser accountUser)
         {
             if (!ModelState.IsValid)
@@ -149,6 +156,7 @@ namespace Spectra.Controllers
 
         [HttpPost]
         [Route("TemporaryDelete")]
+        [BinaryAuthorize("User", ActionType.Xoa)]
         public async Task<IActionResult> TemporaryDelete([FromBody] AccountUser accountUser)
         {
             if (!ModelState.IsValid)
@@ -177,30 +185,81 @@ namespace Spectra.Controllers
         [AllowAnonymous]
         public async Task<IActionResult> PostAccountUser([FromBody] AccountUser accountUser)
         {
-            if (!ModelState.IsValid)
+            try
             {
-                return BadRequest(ModelState);
-            }
-            var hashedPassword = BCrypt.Net.BCrypt.HashPassword(accountUser.Password); // Mã hóa
-            var user = new AccountUser
-            {
-                Code = accountUser.Code,
-                Name = accountUser.Name,
-                Email = accountUser.Email,
-                Phone = accountUser.Phone,
-                Gender = accountUser.Gender,
-                Status = true,
-                CreatedDate = DateTime.Now,
-                ModifiedDate = DateTime.Now,
-                Password = hashedPassword
-            };
-            _context.AccountUsers.Add(user);
-            await _context.SaveChangesAsync();
+                if (!ModelState.IsValid)
+                    return BadRequest(ModelState);
 
-            return CreatedAtAction("GetAccountUser", new { id = accountUser.Id }, accountUser);
+                var hashedPassword = BCrypt.Net.BCrypt.HashPassword(accountUser.Password);
+
+                var user = new AccountUser
+                {
+                    Code = accountUser.Code,
+                    Name = accountUser.Name,
+                    Email = accountUser.Email,
+                    Phone = accountUser.Phone,
+                    Gender = accountUser.Gender,
+                    Status = true,
+                    CreatedDate = DateTime.Now,
+                    ModifiedDate = DateTime.Now,
+                    Password = hashedPassword
+                };
+
+                _context.AccountUsers.Add(user);
+                await _context.SaveChangesAsync();
+
+                var role = await _context.Roles.FirstOrDefaultAsync(r => r.Name == "Customer");
+                if (role == null)
+                    return BadRequest("Vai trò 'Customer' không tồn tại");
+
+                _context.UserRoleCustomers.Add(new UserRoleCustomer
+                {
+                    AccountUserId = user.Id,
+                    RolesId = role.Id
+                });
+                await _context.SaveChangesAsync();
+
+                var modules = await _context.Modules.ToListAsync();
+                var permissionList = new List<Permissions>();
+
+                var orderModule = modules.FirstOrDefault(m => m.Name == "Order");
+                if (orderModule != null)
+                {
+                    permissionList.Add(new Permissions
+                    {
+                        RolesId = role.Id,
+                        ModulesId = orderModule.Id,
+                        PermissionValue = 1 // View
+                    });
+                }
+
+                var userModule = modules.FirstOrDefault(m => m.Name == "User");
+                if (userModule != null)
+                {
+                    permissionList.Add(new Permissions
+                    {
+                        RolesId = role.Id,
+                        ModulesId = userModule.Id,
+                        PermissionValue = 5 // Edit
+                    });
+                }
+
+                _context.Permissions.AddRange(permissionList);
+                await _context.SaveChangesAsync();
+
+                return CreatedAtAction("GetAccountUser", new { id = user.Id }, accountUser);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, $"Lỗi hệ thống: {ex.Message}");
+            }
         }
+
+
+
         [HttpGet]
         [Route("excel")]
+        [BinaryAuthorize("User", ActionType.XuatFile)]
         public async Task<FileResult> ExportExcel()
         {
             var data = await _context.AccountUsers.ToListAsync();
@@ -240,6 +299,7 @@ namespace Spectra.Controllers
         }
         // DELETE: api/AccountUser/5
         [HttpDelete("{id}")]
+        [BinaryAuthorize("User", ActionType.Xoa)]
         public async Task<IActionResult> DeleteAccountUser([FromRoute] int? id)
         {
             if (!ModelState.IsValid)
@@ -268,66 +328,84 @@ namespace Spectra.Controllers
         [HttpPost]
         [Route("Login")]
         [AllowAnonymous]
-        public IActionResult Login([FromBody] AccountUserLogin login)
+        public async Task<IActionResult> Login([FromBody] AccountUserLogin login)
         {
-            // Tìm user theo email hoặc số điện thoại và status = true
-            var result = _context.AccountUsers
-                .FirstOrDefault(acc =>
-                    acc.Status == true &&
-                    (acc.Email == login.Emailorphone || acc.Phone == login.Emailorphone)
+            // Tìm user theo email hoặc số điện thoại và còn hoạt động
+            var account = await _context.AccountUsers
+                .Include(u => u.UserRoleCustomers)
+                .ThenInclude(ur => ur.Roles)
+                .FirstOrDefaultAsync(u =>
+                    u.Status == true &&
+                    (u.Email == login.Emailorphone || u.Phone == login.Emailorphone)
                 );
 
-            // Nếu tìm thấy và mật khẩu khớp
-            if (result != null && BCrypt.Net.BCrypt.Verify(login.Password, result.Password))
+            if (account == null || !BCrypt.Net.BCrypt.Verify(login.Password, account.Password))
+                return BadRequest("Sai mật khẩu hoặc tài khoản đã bị khóa");
+
+            // Lấy quyền từ tất cả role → tổng hợp từng module bằng bitwise OR
+            var permissions = await (from ur in _context.UserRoleCustomers
+                                     join rp in _context.Permissions on ur.RolesId equals rp.RolesId
+                                     join m in _context.Modules on rp.ModulesId equals m.Id
+                                     where ur.AccountUserId == account.Id
+                                     select new
+                                     {
+                                         Module = m.Name,
+                                         Permission = rp.PermissionValue
+                                     }).ToListAsync();
+
+            var permissionDict = permissions
+                .GroupBy(p => p.Module)
+                .ToDictionary(
+                    g => g.Key,
+                    g => g.Aggregate(0, (acc, val) => acc | val.Permission) // tổng hợp bitwise OR
+                );
+
+            // Tạo danh sách claim
+            var claims = new List<Claim>
+    {
+        new Claim(ClaimTypes.Name, account.Name ?? ""),
+        new Claim("UserId", account.Id.ToString()),
+        new Claim("Phone", account.Phone ?? ""),
+        new Claim("Email", account.Email ?? ""),
+        new Claim("Permissions", JsonConvert.SerializeObject(permissionDict)) // serialize quyền
+    };
+
+            var token = GenerateJwtToken(claims);
+
+            return Ok(new
             {
-                var token = GenerateJwtToken(result);
-
-                return Ok(new
+                Token = token,
+                User = new
                 {
-                    Token = token,
-                    User = new
-                    {
-                        Id = result.Id,
-                        Email = result.Email,
-                        Phone = result.Phone,
-                        Name = result.Name
-                    }
-                });
-            }
-
-            return Unauthorized();
+                    Id = account.Id,
+                    Email = account.Email,
+                    Phone = account.Phone,
+                    Name = account.Name
+                }
+            });
         }
 
-
-        private string GenerateJwtToken(AccountUser user)
+        private string GenerateJwtToken(List<Claim> claims)
         {
-            var securityKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_configuration["Jwt:Key"]));
-            var credentials = new SigningCredentials(securityKey, SecurityAlgorithms.HmacSha256);
-
-            var claims = new[]
-            {
-                new Claim(JwtRegisteredClaimNames.Sub, user.Email ?? user.Phone),
-                new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
-                new Claim("UserId", user.Id.ToString()),
-                new Claim("Name", user.Name ?? ""),
-                new Claim("Phone", user.Phone ?? ""),
-                new Claim("Email", user.Email ?? "")
-            };
+            var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_configuration["Jwt:Key"]));
+            var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
 
             var token = new JwtSecurityToken(
                 issuer: _configuration["Jwt:Issuer"],
                 audience: _configuration["Jwt:Audience"],
                 claims: claims,
                 expires: DateTime.UtcNow.AddHours(6),
-                signingCredentials: credentials
+                signingCredentials: creds
             );
 
             return new JwtSecurityTokenHandler().WriteToken(token);
         }
 
+
         // POST: api/AccountUsers/ChangePassword/1
         [HttpPost]
         [Route("ChangePassword/{id}")]
+        [BinaryAuthorize("User", ActionType.Sua)]
         public async Task<IActionResult> ChangePassword([FromRoute] int? id, [FromBody] string password)
         {
             var userIdFromToken = User.FindFirst("UserId")?.Value;
@@ -343,6 +421,7 @@ namespace Spectra.Controllers
             }
             return NoContent();
         }
+
 
         [HttpPost]
         [Route("SendEmail")]

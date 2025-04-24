@@ -12,7 +12,7 @@ namespace Spectra.Models
     public class AccountUser
     {
         [Key]
-        public int? Id { get; set; }
+        public int Id { get; set; }
         [Required(ErrorMessage = "This field can't blank")]
         public string Code { get; set; }
         [MaxLength(250, ErrorMessage = "Max of length is 30 characters")]
@@ -32,6 +32,6 @@ namespace Spectra.Models
         public DateTime CreatedDate { get; set; }
         public DateTime ModifiedDate { get; set; }
         public ICollection<Order> orders { get; set; }
-        public ICollection<UserRoles> UserRoles { get; set; }
+        public ICollection<UserRoleCustomer> UserRoleCustomers { get; set; }
     }
 }

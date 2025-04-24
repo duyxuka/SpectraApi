@@ -7,8 +7,8 @@ using System.Threading.Tasks;
 
 namespace Spectra.Models
 {
-    [Table("Spectra_Roles")]
-    public class Roles
+    [Table("Spectra_Modules")]
+    public class Modules
     {
         [Key]
         public int Id { get; set; }
@@ -16,9 +16,6 @@ namespace Spectra.Models
         [Required]
         [MaxLength(100)]
         public string Name { get; set; } // Admin, Viewer, User
-        public string RoleType { get; set; }
-        public ICollection<UserRoleAdmin> UserRoleAdmins { get; set; }
-        public ICollection<UserRoleCustomer> UserRoleCustomers { get; set; }
         public ICollection<Permissions> Permissions { get; set; }
     }
 }

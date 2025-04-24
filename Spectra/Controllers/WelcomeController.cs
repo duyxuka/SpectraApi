@@ -9,6 +9,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Spectra.Models;
+using Spectra.Models.Authorize;
 
 namespace Spectra.Controllers
 {
@@ -88,6 +89,7 @@ namespace Spectra.Controllers
         // PUT: api/Welcome/5
         [HttpPost]
         [Route("PutWelcome")]
+        [BinaryAuthorize("Welcome", ActionType.Sua)]
         public async Task<IActionResult> PutWelcome( [FromBody] Welcome welcome)
         {
             if (!ModelState.IsValid)
@@ -113,6 +115,7 @@ namespace Spectra.Controllers
 
         // POST: api/Welcome
         [HttpPost]
+        [BinaryAuthorize("Welcome", ActionType.Them)]
         public async Task<IActionResult> PostWelcome([FromBody] Welcome welcome)
         {
             if (!ModelState.IsValid)
@@ -128,6 +131,7 @@ namespace Spectra.Controllers
 
         // DELETE: api/Welcome/5
         [HttpDelete("{id}")]
+        [BinaryAuthorize("Welcome", ActionType.Xoa)]
         public async Task<IActionResult> DeleteWelcome([FromRoute] int? id)
         {
             if (!ModelState.IsValid)

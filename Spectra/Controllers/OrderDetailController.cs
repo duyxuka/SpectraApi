@@ -11,6 +11,7 @@ using Spectra.Models;
 using System.Net.Mail;
 using System.Net;
 using Microsoft.AspNetCore.Cors;
+using Spectra.Models.Authorize;
 
 namespace Spectra.Controllers
 {
@@ -29,7 +30,7 @@ namespace Spectra.Controllers
 
         // GET: api/OrderDetail
         [HttpGet]
-        [AllowAnonymous]
+        [BinaryAuthorize("OrderDetail", ActionType.Xem)]
         public IEnumerable<OrderDetail> GetOrderDetail()
         {
             return _context.OrderDetail;
@@ -38,7 +39,7 @@ namespace Spectra.Controllers
         // GET: api/OrderDetail/5
         [HttpGet]
         [Route("OderAcc/{id}")]
-        [AllowAnonymous]
+        [BinaryAuthorize("OrderDetail", ActionType.Xem)]
         public async Task<IActionResult> GetOrderAccount([FromRoute] int? id)
         {
             if (!ModelState.IsValid)
@@ -70,7 +71,7 @@ namespace Spectra.Controllers
 
         // GET: api/OrderDetails/5
         [HttpGet("{id}")]
-        [AllowAnonymous]
+        [BinaryAuthorize("OrderDetail", ActionType.Xem)]
         public async Task<IActionResult> GetOrderDetail([FromRoute] int? id)
         {
             if (!ModelState.IsValid)
@@ -125,6 +126,7 @@ namespace Spectra.Controllers
         // PUT: api/OrderDetails/5
         [HttpPost]
         [Route("PutProductQuantity")]
+        [BinaryAuthorize("OrderDetail", ActionType.Sua)]
         public async Task<IActionResult> PutProductQuantity([FromBody] OrderDetail orderDetail)
         {
             if (!ModelState.IsValid)
@@ -149,7 +151,7 @@ namespace Spectra.Controllers
 
         // POST: api/OrderDetails
         [HttpPost]
-        [AllowAnonymous]
+        [BinaryAuthorize("OrderDetail", ActionType.Them)]
         public async Task<IActionResult> PostOrderDetail([FromBody] OrderDetail orderDetail)
         {
             if (!ModelState.IsValid)
@@ -164,7 +166,7 @@ namespace Spectra.Controllers
 
         [HttpPost]
         [Route("SendEmailCancel")]
-        [AllowAnonymous]
+        [BinaryAuthorize("OrderDetail", ActionType.Sua)]
         public ActionResult SendEmailCancel([FromBody] OrderEmailDto orderEmail)
         {
             try
@@ -340,6 +342,7 @@ namespace Spectra.Controllers
 
         // DELETE: api/OrderDetail/5
         [HttpDelete("{id}")]
+        [BinaryAuthorize("OrderDetail", ActionType.Xoa)]
         public async Task<IActionResult> DeleteOrderDetail([FromRoute] int? id)
         {
             if (!ModelState.IsValid)

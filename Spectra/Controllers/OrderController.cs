@@ -31,6 +31,7 @@ namespace Spectra.Controllers
 
         // GET: api/Order
         [HttpGet]
+        [BinaryAuthorize("Order", ActionType.Xem)]
         public IEnumerable<Order> GetOrder()
         {
             return _context.Order
@@ -41,7 +42,7 @@ namespace Spectra.Controllers
 
         [HttpGet]
         [Route("OrderPage")]
-        [RoleAuthorize("SuperAdmin", "Sales")]
+        [BinaryAuthorize("Order", ActionType.Xem)]
         public IActionResult OrderResult(int? page, int pagesize = 5)
         {
             string pattern = "[ ,+(){}.*+?^$|]";
@@ -81,6 +82,7 @@ namespace Spectra.Controllers
 
         [HttpGet]
         [Route("OrderPageBrand")]
+        [BinaryAuthorize("Order", ActionType.Xem)]
         public IActionResult OrderResultBrand(int? page, int pagesize = 5)
         {
             string pattern = "[ ,+(){}.*+?^$|]";
@@ -120,6 +122,7 @@ namespace Spectra.Controllers
 
         [HttpGet]
         [Route("OrderPageCT")]
+        [BinaryAuthorize("Order", ActionType.Xem)]
         public IActionResult OrderResultCT(int? page, int pagesize = 5)
         {
             string pattern = "[ ,+(){}.*+?^$|]";
@@ -167,7 +170,7 @@ namespace Spectra.Controllers
         }
         [HttpGet]
         [Route("orderSuccess")]
-        [AllowAnonymous]
+        [BinaryAuthorize("Order", ActionType.Xem)]
         public async Task<IActionResult> GetOrderAccountSS([FromQuery] int? id)
         {
             if (!ModelState.IsValid)
@@ -220,7 +223,7 @@ namespace Spectra.Controllers
         }
         [HttpGet]
         [Route("OrderAcc")]
-        [AllowAnonymous]
+        [BinaryAuthorize("Order", ActionType.Xem)]
         public async Task<IActionResult> GetOrderAccount([FromQuery] int? id)
         {
             if (!ModelState.IsValid)
@@ -244,7 +247,7 @@ namespace Spectra.Controllers
         }
         // GET: api/Orders/5
         [HttpGet("{id}")]
-        [AllowAnonymous]
+        [BinaryAuthorize("Order", ActionType.Xem)]
         public async Task<IActionResult> GetOrder([FromRoute] int? id)
         {
             if (!ModelState.IsValid)
@@ -265,7 +268,7 @@ namespace Spectra.Controllers
         // PUT: api/Orders/
         [HttpPost]
         [Route("PutOrder")]
-        [AllowAnonymous]
+        [BinaryAuthorize("Order", ActionType.Sua)]
         public async Task<IActionResult> PutOrder([FromBody] Order order)
         {
             if (!ModelState.IsValid)
@@ -291,7 +294,7 @@ namespace Spectra.Controllers
 
         // POST: api/Orders
         [HttpPost]
-        [AllowAnonymous]
+        [BinaryAuthorize("Order", ActionType.Them)]
         public async Task<IActionResult> PostOrder([FromBody] Order order)
         {
             if (!ModelState.IsValid)
@@ -307,6 +310,7 @@ namespace Spectra.Controllers
 
         // DELETE: api/Order/5
         [HttpDelete("{id}")]
+        [BinaryAuthorize("Order", ActionType.Xoa)]
         public async Task<IActionResult> DeleteOrder([FromRoute] int? id)
         {
             if (!ModelState.IsValid)

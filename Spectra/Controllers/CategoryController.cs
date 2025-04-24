@@ -9,6 +9,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Spectra.Models;
+using Spectra.Models.Authorize;
 
 namespace Spectra.Controllers
 {
@@ -165,6 +166,7 @@ namespace Spectra.Controllers
 
         [HttpGet]
         [Route("TrashCategory")]
+        [BinaryAuthorize("Category", ActionType.Xoa)]
         public IEnumerable<Category> GetTrashCategoryProducts()
         {
             return _context.Category.Where(b => b.Status == false);
@@ -172,6 +174,7 @@ namespace Spectra.Controllers
 
         [HttpPost]
         [Route("RepeatCategory")]
+        [BinaryAuthorize("Category", ActionType.Xoa)]
         public async Task<IActionResult> RepeatCategoryProduct([FromBody] Category categoryProduct)
         {
             if (!ModelState.IsValid)
@@ -196,6 +199,7 @@ namespace Spectra.Controllers
         }
         [HttpPost]
         [Route("TemporaryDelete")]
+        [BinaryAuthorize("Category", ActionType.Xoa)]
         public async Task<IActionResult> TemporaryDelete([FromBody] Category categoryProduct)
         {
             if (!ModelState.IsValid)
@@ -222,6 +226,7 @@ namespace Spectra.Controllers
         // PUT: api/Category/5
         [HttpPost]
         [Route("PutCategory")]
+        [BinaryAuthorize("Category", ActionType.Sua)]
         public async Task<IActionResult> PutCategoryProduct([FromBody] Category categoryProduct)
         {
             if (!ModelState.IsValid)
@@ -247,6 +252,7 @@ namespace Spectra.Controllers
 
         // POST: api/Category
         [HttpPost]
+        [BinaryAuthorize("Category", ActionType.Them)]
         public async Task<IActionResult> PostCategory([FromBody] Category category)
         {
             if (!ModelState.IsValid)
@@ -262,6 +268,7 @@ namespace Spectra.Controllers
 
         // DELETE: api/Category/5
         [HttpDelete("{id}")]
+        [BinaryAuthorize("Category", ActionType.Xoa)]
         public async Task<IActionResult> DeleteCategory([FromRoute] int? id)
         {
             if (!ModelState.IsValid)

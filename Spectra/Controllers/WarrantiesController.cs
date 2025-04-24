@@ -15,6 +15,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Spectra.Models;
+using Spectra.Models.Authorize;
 
 namespace Spectra.Controllers
 {
@@ -64,6 +65,7 @@ namespace Spectra.Controllers
 
         [HttpGet]
         [Route("WrantyPage")]
+        [BinaryAuthorize("Warranties", ActionType.Xem)]
         public IActionResult WarrantyResult(int? page, int pagesize = 5)
         {
             string pattern = "[ ,+(){}.*+?^$|]";
@@ -119,6 +121,7 @@ namespace Spectra.Controllers
 
         [HttpGet]
         [Route("excel")]
+        [BinaryAuthorize("Warranties", ActionType.XuatFile)]
         public async Task<FileResult> ExportExcel()
         {
             var data = await _context.Warranties.ToListAsync();
@@ -476,6 +479,7 @@ namespace Spectra.Controllers
         }
         // GET: api/Warranties/5
         [HttpGet("{id}")]
+        [BinaryAuthorize("Warranties", ActionType.Xem)]
         public async Task<IActionResult> GetWarranty([FromRoute] int? id)
         {
             if (!ModelState.IsValid)
@@ -496,6 +500,7 @@ namespace Spectra.Controllers
         // PUT: api/Warranties/5
         [HttpPost]
         [Route("PutWarranty")]
+        [BinaryAuthorize("Warranties", ActionType.Sua)]
         public async Task<IActionResult> PutWarranty([FromBody] Warranty warranty)
         {
             if (!ModelState.IsValid)
@@ -535,6 +540,7 @@ namespace Spectra.Controllers
 
         // DELETE: api/Warranties/5
         [HttpDelete("{id}")]
+        [BinaryAuthorize("Warranties", ActionType.Xoa)]
         public async Task<IActionResult> DeleteWarranty([FromRoute] int? id)
         {
             if (!ModelState.IsValid)

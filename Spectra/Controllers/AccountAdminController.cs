@@ -13,7 +13,9 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.IdentityModel.Tokens;
+using Newtonsoft.Json;
 using Spectra.Models;
+using Spectra.Models.Authorize;
 
 namespace Spectra.Controllers
 {
@@ -25,64 +27,106 @@ namespace Spectra.Controllers
     public class AccountAdminController : ControllerBase
     {
         private readonly AppDBContext _context;
-        
-        public AccountAdminController(AppDBContext context)
+        private readonly IConfiguration _configuration;
+
+        public AccountAdminController(AppDBContext context, IConfiguration configuration)
         {
+            _configuration = configuration;
             _context = context;
         }
 
         // GET: api/AccountAdmin
         [HttpGet]
-        public IEnumerable<AccountAdmin> GetAccountAdmins()
+        [BinaryAuthorize("Admin", ActionType.Xem)]
+        public async Task<IEnumerable<AdminDTO>> GetAccountAdmins()
         {
-            return _context.AccountAdmins.AsNoTracking().ToList();
+            var accounts = await (from ac in _context.AccountAdmins
+                                  join ur in _context.UserRoleAdmins on ac.Id equals ur.AccountAdminId
+                                  join ro in _context.Roles on ur.RolesId equals ro.Id
+                                  select new
+                                  {
+                                      ac.Id,
+                                      ac.Code,
+                                      ac.Name,
+                                      ac.Status,
+                                      ac.Email,
+                                      RoleName = ro.Name
+                                  })
+                                 .AsNoTracking()
+                                 .ToListAsync();
+
+            var grouped = accounts
+                .GroupBy(a => new { a.Id, a.Code, a.Name, a.Status, a.Email })
+                .Select(g => new AdminDTO
+                {
+                    Id = g.Key.Id,
+                    Code = g.Key.Code,
+                    Name = g.Key.Name,
+                    Status = g.Key.Status,
+                    Email = g.Key.Email,
+                    RoleNames = g.Select(x => x.RoleName).Distinct().ToList()
+                });
+
+            return grouped;
         }
+
 
         [HttpPost("login")]
         [AllowAnonymous]
-        public IActionResult Login([FromBody] LoginModel user)
+        public async Task<IActionResult> Login([FromBody] LoginModel user)
         {
-            var account = _context.AccountAdmins.FirstOrDefault(x => x.Email == user.Email);
-            if (user is null || account is null)
-            {
-                return BadRequest("Invalid client request");
-            }
+            var account = await _context.AccountAdmins
+                .Include(u => u.UserRoleAdmins)
+                .ThenInclude(ur => ur.Roles)
+                .FirstOrDefaultAsync(u => u.Email == user.Email);
 
-            if (PasswordHelper.VerifyPassword(user.Password, account.PasswordHash, account.PasswordSalt) && account.Status == true)
-            {
-                // Lấy user role từ bảng quyền (nếu cần)
-                var userRole = _context.UserRoles.FirstOrDefault(x => x.UserId == account.Id);
-                var userType = userRole?.UserType.ToString() ?? "User"; // ép kiểu enum sang string
+            if (!PasswordHelper.VerifyPassword(user.Password, account.PasswordHash, account.PasswordSalt) || !account.Status)
+                return BadRequest("Sai mật khẩu hoặc tài khoản đã bị khóa");
 
-                var claims = new List<Claim>
-                {
-                    new Claim(ClaimTypes.NameIdentifier, account.Id.ToString()),
-                    new Claim(ClaimTypes.Email, account.Email),
-                    new Claim(ClaimTypes.Name, account.Name),
-                    new Claim(ClaimTypes.Role, userType) // hợp lệ vì là string
-                };
+            // Lấy quyền từ tất cả role → tổng hợp từng module bằng bitwise OR
+            var permissions = await (from ur in _context.UserRoleAdmins
+                                     join rp in _context.Permissions on ur.RolesId equals rp.RolesId
+                                     join m in _context.Modules on rp.ModulesId equals m.Id
+                                     where ur.AccountAdminId == account.Id
+                                     select new
+                                     {
+                                         Module = m.Name,
+                                         Permission = rp.PermissionValue
+                                     }).ToListAsync();
 
-
-                var secretKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes("this is my custom Secret key for authentication"));
-                var signinCredentials = new SigningCredentials(secretKey, SecurityAlgorithms.HmacSha256);
-                var tokeOptions = new JwtSecurityToken(
-                    issuer: "http://localhost:50925/",
-                    audience: "http://localhost:50925/",
-                    claims: claims,
-                    expires: DateTime.Now.AddDays(1),
-                    signingCredentials: signinCredentials
+            var permissionDict = permissions
+                .GroupBy(p => p.Module)
+                .ToDictionary(
+                    g => g.Key,
+                    g => g.Aggregate(0, (acc, val) => acc | val.Permission) // tổng hợp bitwise OR
                 );
 
-                var tokenString = new JwtSecurityTokenHandler().WriteToken(tokeOptions);
+            var claims = new List<Claim>
+            {
+                new Claim(ClaimTypes.Name, account.Name),
+                new Claim("UserId", account.Id.ToString()),
+                new Claim("Permissions", JsonConvert.SerializeObject(permissionDict)) // serialize permissions
+            };
 
-                return Ok(new AuthenticatedResponse
-                {
-                    Token = tokenString,
-                    User = account.Name
-                });
-            }
+            var token = GenerateJwtToken(claims); // bạn tự code phần này
 
-            return Unauthorized();
+            return Ok(new { token });
+        }
+
+        private string GenerateJwtToken(List<Claim> claims)
+        {
+            var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_configuration["Jwt:Key"]));
+            var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
+
+            var token = new JwtSecurityToken(
+                issuer: _configuration["Jwt:Issuer"],
+                audience: _configuration["Jwt:Audience"],
+                claims: claims,
+                expires: DateTime.UtcNow.AddDays(1),
+                signingCredentials: creds
+            );
+
+            return new JwtSecurityTokenHandler().WriteToken(token);
         }
 
         //private string GenerateMD5(string password)
@@ -101,6 +145,7 @@ namespace Spectra.Controllers
 
         // GET: api/AccountAdmin/5
         [HttpGet("{id}")]
+        [BinaryAuthorize("Admin", ActionType.Xem)]
         public async Task<IActionResult> GetAccountAdmin([FromRoute] int? id)
         {
             if (!ModelState.IsValid)
@@ -108,16 +153,97 @@ namespace Spectra.Controllers
                 return BadRequest(ModelState);
             }
 
-            var accountAdmin = await _context.AccountAdmins.FindAsync(id);
+            var accountAdmin = await _context.AccountAdmins
+                .Where(ac => ac.Id == id)
+                .FirstOrDefaultAsync();
 
             if (accountAdmin == null)
             {
                 return NotFound();
             }
 
-            return Ok(accountAdmin);
+            var roles = await _context.UserRoleAdmins
+                .Where(ur => ur.AccountAdminId == accountAdmin.Id)
+                .Join(_context.Roles,
+                      ur => ur.RolesId,
+                      ro => ro.Id,
+                      (ur, ro) => new
+                      {
+                          ro.Id,
+                          ro.Name
+                      })
+                .ToListAsync();
+
+            var result = new
+            {
+                accountAdmin.Id,
+                accountAdmin.Code,
+                accountAdmin.Name,
+                accountAdmin.Status,
+                accountAdmin.Email,
+                Roles = roles
+            };
+
+            return Ok(result);
         }
 
+
+        [HttpGet]
+        [Route("GetPermissionsByRoles")]
+        public async Task<IActionResult> GetPermissionsByRoles([FromQuery] int[] roleIds)
+        {
+            if (roleIds == null || roleIds.Length == 0)
+            {
+                return BadRequest("RoleIds are required.");
+            }
+
+            try
+            {
+                // Lấy tất cả các module từ bảng Spectra_Modules
+                var modules = await _context.Modules
+                    .Select(m => new
+                    {
+                        m.Id,
+                        m.Name
+                    })
+                    .ToListAsync();
+
+                // Lấy danh sách quyền từ bảng Spectra_Permissions cho các roleIds
+                var permissionsRaw = await _context.Permissions
+                    .Where(p => roleIds.Contains(p.RolesId))
+                    .Select(p => new
+                    {
+                        p.ModulesId,
+                        p.PermissionValue
+                    })
+                    .ToListAsync();
+
+                // Gộp quyền trong bộ nhớ (LINQ-to-Objects)
+                var permissions = permissionsRaw
+                    .GroupBy(p => p.ModulesId)
+                    .Select(g => new
+                    {
+                        ModulesId = g.Key,
+                        PermissionValue = g.Aggregate(0, (acc, p) => acc | p.PermissionValue) // Gộp quyền ở phía client
+            })
+                    .ToList();
+
+                // Ánh xạ tất cả module với quyền (nếu không có quyền thì PermissionValue = 0)
+                var result = modules.Select(m => new
+                {
+                    ModulesId = m.Id,
+                    ModuleName = m.Name,
+                    PermissionValue = permissions.FirstOrDefault(p => p.ModulesId == m.Id)?.PermissionValue ?? 0
+                }).ToList();
+
+                return Ok(result);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine(ex.ToString());
+                return StatusCode(500, "Internal Server Error: " + ex.Message);
+            }
+        }
         // PUT: api/AccountAdmin/5
         //[HttpPost]
         //[Route("PutAccountAdmin")]
@@ -145,6 +271,7 @@ namespace Spectra.Controllers
 
         [HttpPost]
         [Route("PutAccountAdmin")]
+        [BinaryAuthorize("Admin", ActionType.Sua)]
         public async Task<IActionResult> PutAccountAdmin([FromBody] AccountAdmin accountAdmin)
         {
             if (!ModelState.IsValid)
@@ -207,6 +334,7 @@ namespace Spectra.Controllers
 
         [HttpPost]
         [Route("PostAccountAdmin")]
+        [BinaryAuthorize("Admin", ActionType.Them)]
         public async Task<IActionResult> PostAccountAdmin([FromBody] AccountAdmin accountAdmin)
         {
             if (!ModelState.IsValid)
@@ -231,6 +359,7 @@ namespace Spectra.Controllers
 
         // DELETE: api/AccountAdmin/5
         [HttpDelete("{id}")]
+        [BinaryAuthorize("Admin", ActionType.Xoa)]
         public async Task<IActionResult> DeleteAccountAdmin([FromRoute] int? id)
         {
             if (!ModelState.IsValid)
