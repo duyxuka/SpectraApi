@@ -29,24 +29,30 @@ namespace Spectra.Controllers
         [AllowAnonymous]
         public IEnumerable<Home> GetHomes()
         {
-            return _context.Homes;
+            return _context.Homes.AsNoTracking().OrderByDescending(x => x.Id).ToList();
         }
+
         [HttpGet]
         [Route("HomeUser")]
         [AllowAnonymous]
         public async Task<IActionResult> GetHomesUser()
         {
-            var data = await _context.Homes.Select(x => new HomeDisplay
-            {
-                Id = x.Id,
-                TitleSeo = x.TitleSeo,
-                MetaKeyWords = x.MetaKeyWords,
-                MetaDescription = x.MetaDescription,
-                CreatedDate = x.CreatedDate,
-                ModifiedDate = x.ModifiedDate,
-            }).FirstOrDefaultAsync();
+            var data = await _context.Homes
+                .Where(x => x.Status == true)
+                .Select(x => new HomeDisplay
+                {
+                    Id = x.Id,
+                    TitleSeo = x.TitleSeo,
+                    MetaKeyWords = x.MetaKeyWords,
+                    MetaDescription = x.MetaDescription,
+                    CreatedDate = x.CreatedDate,
+                    ModifiedDate = x.ModifiedDate
+                })
+                .FirstOrDefaultAsync();
+
             return Ok(data);
         }
+
 
         // GET: api/Home/5
         [HttpGet("{id}")]
@@ -103,6 +109,7 @@ namespace Spectra.Controllers
             }
 
             _context.Homes.Add(home);
+            home.Status = false;
             home.CreatedDate = DateTime.Now;
             await _context.SaveChangesAsync();
 

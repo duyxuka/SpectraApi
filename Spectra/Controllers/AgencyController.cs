@@ -29,7 +29,7 @@ namespace Spectra.Controllers
         [AllowAnonymous]
         public IEnumerable<Agency> GetAgencies()
         {
-            return _context.Agencies.AsNoTracking().ToList(); 
+            return _context.Agencies.AsNoTracking().OrderByDescending(x => x.Id).ToList(); 
         }
         [HttpGet]
         [Route("AgencyUser")]
@@ -37,7 +37,7 @@ namespace Spectra.Controllers
         public async Task<IActionResult> GetAgencyUser()
         {
             var data = await _context.Agencies
-                .AsNoTracking()
+                .Where(x => x.Status == true)
                 .Select(x => new AgencyDisplay
                 {
                     Id = x.Id,
@@ -45,7 +45,7 @@ namespace Spectra.Controllers
                     MetaKeyWords = x.MetaKeyWords,
                     MetaDescription = x.MetaDescription,
                     CreatedDate = x.CreatedDate,
-                    ModifiedDate = x.ModifiedDate,
+                    ModifiedDate = x.ModifiedDate
                 })
                 .FirstOrDefaultAsync();
 
@@ -115,6 +115,7 @@ namespace Spectra.Controllers
             }
 
             _context.Agencies.Add(agency);
+            agency.Status = false;
             agency.CreatedDate = DateTime.Now;
             await _context.SaveChangesAsync();
 

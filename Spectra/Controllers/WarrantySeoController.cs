@@ -28,14 +28,16 @@ namespace Spectra.Controllers
         [HttpGet]
         public IEnumerable<WarrantySeo> GetWarrantySeos()
         {
-            return _context.WarrantySeos;
+            return _context.WarrantySeos.AsNoTracking().OrderByDescending(x => x.Id).ToList();
         }
         [HttpGet]
         [Route("WarrantyUser")]
         [AllowAnonymous]
         public async Task<IActionResult> GetWarrantyUser()
         {
-            var data = await _context.WarrantySeos.Select(x => new WarrantySeo
+            var data = await _context.WarrantySeos
+            .Where(x => x.Status == true)
+            .Select(x => new WarrantySeo
             {
                 Id = x.Id,
                 TitleSeo = x.TitleSeo,
@@ -101,6 +103,8 @@ namespace Spectra.Controllers
             }
 
             _context.WarrantySeos.Add(warrantySeo);
+            warrantySeo.Status = false;
+            warrantySeo.CreatedDate = DateTime.Now;
             await _context.SaveChangesAsync();
 
             return CreatedAtAction("GetWarrantySeo", new { id = warrantySeo.Id }, warrantySeo);

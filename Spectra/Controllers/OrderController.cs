@@ -18,7 +18,7 @@ namespace Spectra.Controllers
     [EnableCors("AddCors")]
     [Route("api/[controller]")]
     [ApiController]
-    [Authorize]
+    //[Authorize]
     public class OrderController : ControllerBase
     {
         private readonly AppDBContext _context;
@@ -170,7 +170,8 @@ namespace Spectra.Controllers
         }
         [HttpGet]
         [Route("orderSuccess")]
-        [BinaryAuthorize("Order", ActionType.Xem)]
+        //[BinaryAuthorize("Order", ActionType.Xem)]
+        [AllowAnonymous]
         public async Task<IActionResult> GetOrderAccountSS([FromQuery] int? id)
         {
             if (!ModelState.IsValid)
@@ -178,23 +179,23 @@ namespace Spectra.Controllers
                 return BadRequest(ModelState);
             }
 
-            var data = await _context.Order
+            if (id == null)
+            {
+                return BadRequest("AccountUserId is required.");
+            }
+
+            var orders = await _context.Order
                 .AsNoTracking()
-                .Join(_context.AccountUsers, ac => ac.AccountUserId, ae => ae.Id, (ac, ae) => new { ac, ae })
-                .Where(x => x.ac.AccountUserId == id && x.ac.Status == 3)
-                .Select(x => new Order
-                {
-                    Id = x.ac.Id,
-                    AccountUserId = x.ac.AccountUserId,
-                    TotalAmount = x.ac.TotalAmount,
-                    TotalQuantity = x.ac.TotalQuantity,
-                    Status = x.ac.Status,
-                    CreatedDate = x.ac.CreatedDate,
-                    ModifiedDate = x.ac.ModifiedDate,
-                })
+                .Where(o => o.AccountUserId == id && o.Status == 3)
                 .ToListAsync();
 
-            return Ok(data);
+            var totalAmount = orders.Sum(o => o.TotalAmount);
+
+            return Ok(new
+            {
+                orders,
+                totalAmount
+            });
         }
 
         [HttpGet]
@@ -247,7 +248,7 @@ namespace Spectra.Controllers
         }
         // GET: api/Orders/5
         [HttpGet("{id}")]
-        [BinaryAuthorize("Order", ActionType.Xem)]
+        //[BinaryAuthorize("Order", ActionType.Xem)]
         public async Task<IActionResult> GetOrder([FromRoute] int? id)
         {
             if (!ModelState.IsValid)
@@ -294,7 +295,7 @@ namespace Spectra.Controllers
 
         // POST: api/Orders
         [HttpPost]
-        [BinaryAuthorize("Order", ActionType.Them)]
+        //[BinaryAuthorize("Order", ActionType.Them)]
         public async Task<IActionResult> PostOrder([FromBody] Order order)
         {
             if (!ModelState.IsValid)
@@ -310,7 +311,7 @@ namespace Spectra.Controllers
 
         // DELETE: api/Order/5
         [HttpDelete("{id}")]
-        [BinaryAuthorize("Order", ActionType.Xoa)]
+        //[BinaryAuthorize("Order", ActionType.Xoa)]
         public async Task<IActionResult> DeleteOrder([FromRoute] int? id)
         {
             if (!ModelState.IsValid)

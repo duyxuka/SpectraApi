@@ -29,14 +29,16 @@ namespace Spectra.Controllers
         [AllowAnonymous]
         public IEnumerable<NewSeo> GetNewSeos()
         {
-            return _context.NewSeos;
+            return _context.NewSeos.AsNoTracking().OrderByDescending(x => x.Id).ToList();
         }
         [HttpGet]
         [Route("NewUser")]
         [AllowAnonymous]
         public async Task<IActionResult> GetNewsUser()
         {
-            var data = await _context.NewSeos.Select(x => new NewSeoDisplay
+            var data = await _context.NewSeos
+             .Where(x => x.Status == true)
+            .Select(x => new NewSeoDisplay
             {
                 Id = x.Id,
                 TitleSeo = x.TitleSeo,
@@ -102,6 +104,7 @@ namespace Spectra.Controllers
             }
 
             _context.NewSeos.Add(newSeo);
+            newSeo.Status = false;
             newSeo.CreatedDate = DateTime.Now;
             await _context.SaveChangesAsync();
 

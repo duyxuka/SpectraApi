@@ -28,7 +28,7 @@ namespace Spectra.Controllers
         [AllowAnonymous]
         public async Task<IActionResult> GetProductsUser()
         {
-            var data = await _context.ProductSeos.Select(x => new ProductSeoDisplay
+            var data = await _context.ProductSeos.Where(x => x.Status == true).Select(x => new ProductSeoDisplay
             {
                 Id = x.Id,
                 TitleSeo = x.TitleSeo,
@@ -44,7 +44,7 @@ namespace Spectra.Controllers
         [AllowAnonymous]
         public IEnumerable<ProductSeo> GetProductSeos()
         {
-            return _context.ProductSeos;
+            return _context.ProductSeos.AsNoTracking().OrderByDescending(x => x.Id).ToList(); ;
         }
 
         // GET: api/ProductSeo/5
@@ -102,6 +102,8 @@ namespace Spectra.Controllers
             }
 
             _context.ProductSeos.Add(productSeo);
+            productSeo.Status = false;
+            productSeo.CreatedDate = DateTime.Now;
             await _context.SaveChangesAsync();
 
             return CreatedAtAction("GetProductSeo", new { id = productSeo.Id }, productSeo);

@@ -18,7 +18,7 @@ namespace Spectra.Controllers
     [EnableCors("AddCors")]
     [Route("api/[controller]")]
     [ApiController]
-    [Authorize]
+    //[Authorize]
     public class OrderDetailController : ControllerBase
     {
         private readonly AppDBContext _context;
@@ -151,7 +151,7 @@ namespace Spectra.Controllers
 
         // POST: api/OrderDetails
         [HttpPost]
-        [BinaryAuthorize("OrderDetail", ActionType.Them)]
+        //[BinaryAuthorize("OrderDetail", ActionType.Them)]
         public async Task<IActionResult> PostOrderDetail([FromBody] OrderDetail orderDetail)
         {
             if (!ModelState.IsValid)
@@ -159,6 +159,7 @@ namespace Spectra.Controllers
                 return BadRequest(ModelState);
             }
             orderDetail.CreatedDate = DateTime.Now;
+            orderDetail.ModifiedDate = DateTime.Now;
             _context.OrderDetail.Add(orderDetail);
             await _context.SaveChangesAsync();
             return CreatedAtAction("GetOrderDetail", new { id = orderDetail.Id }, orderDetail);

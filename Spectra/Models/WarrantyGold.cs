@@ -24,7 +24,7 @@ namespace Spectra.Models
         public float GtriHĐ { get; set; }
         public float PhiDVBH { get; set; }
         public string File { get; set; }
-        [DefaultValue(true)]
+        [DefaultValue(1)]
         public byte Status { get; set; }
         public DateTime StartDate { get; set; }
         public DateTime CreatedDate { get; set; }

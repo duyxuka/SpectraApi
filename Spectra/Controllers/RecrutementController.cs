@@ -42,7 +42,6 @@ namespace Spectra.Controllers
                 TitleSeo = x.TitleSeo,
                 MetaKeyWords = x.MetaKeyWords,
                 MetaDescription = x.MetaDescription,
-                Description = x.Description,
                 CreatedDate = x.CreatedDate,
                 ModifiedDate = x.ModifiedDate,
                 LinkName = rgx.Replace(x.Name , "-").ToLower()
@@ -50,6 +49,61 @@ namespace Spectra.Controllers
             }).Where(x => x.Status == true).ToList();
 
             return data;
+        }
+        [HttpGet]
+        [Route("RecrutementUser")]
+        [AllowAnonymous]
+        public IActionResult RecrutementUser(int? page, int pagesize = 6)
+        {
+            string pattern = "[ ,+(){}.*+?^$|]";
+            Regex rgx = new Regex(pattern);
+
+            try
+            {
+                var currentPage = page ?? 1;
+
+                using (var context = _context)
+                {
+                    var query = context.Recrutements.AsNoTracking().Where(x => x.Status == true);
+                    var countDetails = query.Count();
+
+                    var result = new PageResult<RecrutementDisplay>
+                    {
+                        Count = countDetails,
+                        PageIndex = currentPage,
+                        PageSize = pagesize,
+                        Items = query
+                            .OrderBy(p => p.CreatedDate)
+                            .Skip((currentPage - 1) * pagesize)
+                            .Take(pagesize)
+                            .Select(x => new RecrutementDisplay
+                            {
+                                Id = x.Id,
+                                Code = x.Code,
+                                Name = x.Name,
+                                Status = x.Status,
+                                Image = x.Image,
+                                TitleSeo = x.TitleSeo,
+                                MetaKeyWords = x.MetaKeyWords,
+                                MetaDescription = x.MetaDescription,
+                                Description = x.Description.Substring(0, 200),
+                                CreatedDate = x.CreatedDate,
+                                ModifiedDate = x.ModifiedDate,
+                                LinkName = rgx.Replace(x.Name, "-").ToLower()
+
+                            })
+                            .ToList()
+                    };
+
+                    return Ok(result);
+                }
+            }
+            catch (Exception ex)
+            {
+                // Log the exception
+                Console.WriteLine($"Error retrieving news details: {ex.Message}");
+                return StatusCode(500, "An error occurred while processing the request.");
+            }
         }
 
         // GET: api/Recrutement/5

@@ -29,14 +29,16 @@ namespace Spectra.Controllers
         [AllowAnonymous]
         public IEnumerable<RecruitmentSeo> GetRecruitmentSeos()
         {
-            return _context.RecruitmentSeos;
+            return _context.RecruitmentSeos.AsNoTracking().OrderByDescending(x => x.Id).ToList(); 
         }
         [HttpGet]
         [Route("RecruitmentUser")]
         [AllowAnonymous]
         public async Task<IActionResult> GetRecruitmentUser()
         {
-            var data = await _context.RecruitmentSeos.Select(x => new RecruitmentSeoDisplay
+            var data = await _context.RecruitmentSeos
+             .Where(x => x.Status == true)
+            .Select(x => new RecruitmentSeoDisplay
             {
                 Id = x.Id,
                 TitleSeo = x.TitleSeo,
@@ -102,6 +104,7 @@ namespace Spectra.Controllers
             }
             
             _context.RecruitmentSeos.Add(recruitmentSeo);
+            recruitmentSeo.Status = false;
             recruitmentSeo.CreatedDate = DateTime.Now;
             await _context.SaveChangesAsync();
 

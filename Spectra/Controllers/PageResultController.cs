@@ -33,11 +33,16 @@ namespace Spectra.Controllers
 
             try
             {
-                var countDetails = _context.Products.Count();
+                var query = _context.Products.AsNoTracking();
+
+                var countDetails = query.Count();
                 var currentPage = page ?? 1;
                 using (var context = _context)
                 {
-                    var productsQuery = context.Products
+                    var productsQuery = query
+                    .OrderBy(x => x.Code)
+                    .Skip((currentPage - 1) * pagesize)
+                    .Take(pagesize)
                     .Join(context.Category, ai => ai.CategoryId, al => al.Id, (ai, al) => new { ai, al })
                     .Join(context.Gift, gt => gt.ai.GiftId, pr => pr.Id, (gt, pr) => new { gt, pr })
                     .Select(x => new ProductDisplay
@@ -61,10 +66,6 @@ namespace Spectra.Controllers
                         Giaphantram = 100 - ((x.gt.ai.SalePrice * 100) / x.gt.ai.Price),
                         LinkName = rgx.Replace(x.gt.ai.Name, "-").ToLower()
                     })
-                    .AsNoTracking()
-                    .OrderBy(x => x.Code)
-                    .Skip((currentPage - 1) * pagesize)
-                    .Take(pagesize)
                     .ToList();
 
                     var result = new PageResult<ProductDisplay>
@@ -96,11 +97,17 @@ namespace Spectra.Controllers
 
             try
             {
-                var countDetails = _context.Products.Count();
+                var query = _context.Products.AsNoTracking();
+
+                var countDetails = query.Count();
                 var currentPage = page ?? 1;
                 using (var context = _context)
                 {
-                    var productsQuery = context.Products.Join(context.Category, ai => ai.CategoryId,
+                    var productsQuery = query
+                    .OrderBy(x => x.Code)
+                    .Skip((currentPage - 1) * pagesize)
+                    .Take(pagesize)
+                    .Join(context.Category, ai => ai.CategoryId,
                     al => al.Id, (ai, al) => new { ai, al }).Join(context.Gift, gt => gt.ai.GiftId,
                     pr => pr.Id, (gt, pr) => new { gt, pr }).Select(x => new ProductDisplay
                     {
@@ -120,17 +127,14 @@ namespace Spectra.Controllers
                         Giaphantram = 100 - ((x.gt.ai.SalePrice * 100) / x.gt.ai.Price),
                         LinkName = rgx.Replace(x.gt.ai.Name, "-").ToLower()
 
-                    })
-                    .AsNoTracking()
-                    .OrderBy(x => x.Code)
-                    .Skip((currentPage - 1) * pagesize)
-                    .Take(pagesize);
+                    }).ToList();
+                    
                     var result = new PageResult<ProductDisplay>
                     {
                         Count = countDetails,
                         PageIndex = currentPage,
                         PageSize = pagesize,
-                        Items = productsQuery.ToList()
+                        Items = productsQuery
                     };
                     return Ok(result);
                 }
@@ -153,11 +157,16 @@ namespace Spectra.Controllers
             Regex rgx = new Regex(pattern);
             try
             {
-                var countDetails = _context.Products.Count();
+                var query = _context.Products.AsNoTracking();
+
+                var countDetails = query.Count();
                 var currentPage = page ?? 1;
                 using (var context = _context)
                 {
-                    var productsQuery = context.Products
+                    var productsQuery = query
+                    .OrderByDescending(p => p.CreatedDate)
+                    .Skip((currentPage - 1) * pagesize)
+                    .Take(pagesize)
                     .Join(context.Category, ai => ai.CategoryId, al => al.Id, (ai, al) => new { ai, al })
                     .Join(context.Gift, gt => gt.ai.GiftId, pr => pr.Id, (gt, pr) => new { gt, pr })
                     .Select(x => new ProductDisplay
@@ -179,10 +188,6 @@ namespace Spectra.Controllers
                         Giaphantram = 100 - ((x.gt.ai.SalePrice * 100) / x.gt.ai.Price),
                         LinkName = rgx.Replace(x.gt.ai.Name, "-").ToLower()
                     })
-                    .AsNoTracking()
-                    .OrderByDescending(p => p.CreatedDate)
-                    .Skip((currentPage - 1) * pagesize)
-                    .Take(pagesize)
                     .ToList();
 
                     var result = new PageResult<ProductDisplay>
@@ -212,12 +217,16 @@ namespace Spectra.Controllers
             Regex rgx = new Regex(pattern);
             try
             {
-                var countDetails = _context.Products.Count(x => x.SalePrice > 0);
+                var query = _context.Products.AsNoTracking().Where(x => x.SalePrice > 0);
+
+                var countDetails = query.Count();
                 var currentPage = page ?? 1;
                 using (var context = _context)
                 {
-                    var productsQuery = context.Products
-                    .Where(p => p.SalePrice > 0)
+                    var productsQuery = query
+                    .OrderBy(x => x.Id)
+                    .Skip((currentPage - 1) * pagesize)
+                    .Take(pagesize)
                     .Join(context.Category, ai => ai.CategoryId, al => al.Id, (ai, al) => new { ai, al })
                     .Join(context.Gift, gt => gt.ai.GiftId, pr => pr.Id, (gt, pr) => new { gt, pr })
                     .Select(x => new ProductDisplay
@@ -238,10 +247,6 @@ namespace Spectra.Controllers
                         Giaphantram = 100 - ((x.gt.ai.SalePrice * 100) / x.gt.ai.Price),
                         LinkName = rgx.Replace(x.gt.ai.Name, "-").ToLower()
                     })
-                    .AsNoTracking()
-                    .OrderBy(x => x.Id)
-                    .Skip((currentPage - 1) * pagesize)
-                    .Take(pagesize)
                     .ToList();
 
                     var result = new PageResult<ProductDisplay>
@@ -273,11 +278,16 @@ namespace Spectra.Controllers
 
             try
             {
-                var countDetails = _context.Products.Count();
+                var query = _context.Products.AsNoTracking();
+
+                var countDetails = query.Count();
                 var currentPage = page ?? 1;
                 using (var context = _context)
                 {
-                    var productsQuery = context.Products
+                    var productsQuery = query
+                    .OrderBy(p => p.SalePrice > 0 ? p.SalePrice : p.Price)
+                    .Skip((currentPage - 1) * pagesize)
+                    .Take(pagesize)
                     .Join(context.Category, ai => ai.CategoryId, al => al.Id, (ai, al) => new { ai, al })
                     .Join(context.Gift, gt => gt.ai.GiftId, pr => pr.Id, (gt, pr) => new { gt, pr })
                     .Select(x => new ProductDisplay
@@ -298,10 +308,6 @@ namespace Spectra.Controllers
                         Giaphantram = 100 - ((x.gt.ai.SalePrice * 100) / x.gt.ai.Price),
                         LinkName = rgx.Replace(x.gt.ai.Name, "-").ToLower()
                     })
-                    .AsNoTracking()
-                    .OrderBy(p => p.SalePrice > 0 ? p.SalePrice : p.Price)
-                    .Skip((currentPage - 1) * pagesize)
-                    .Take(pagesize)
                     .ToList();
 
                     var result = new PageResult<ProductDisplay>
@@ -333,11 +339,16 @@ namespace Spectra.Controllers
 
             try
             {
-                var countDetails = _context.Products.Count();
+                var query = _context.Products.AsNoTracking();
+
+                var countDetails = query.Count();
                 var currentPage = page ?? 1;
                 using (var context = _context)
                 {
-                    var productsQuery = context.Products
+                    var productsQuery = query
+                    .OrderBy(p => p.Price)
+                    .Skip((currentPage - 1) * pagesize)
+                    .Take(pagesize)
                     .Join(context.Category, ai => ai.CategoryId, al => al.Id, (ai, al) => new { ai, al })
                     .Join(context.Gift, gt => gt.ai.GiftId, pr => pr.Id, (gt, pr) => new { gt, pr })
                     .Select(x => new ProductDisplay
@@ -358,10 +369,6 @@ namespace Spectra.Controllers
                         Giaphantram = 100 - ((x.gt.ai.SalePrice * 100) / x.gt.ai.Price),
                         LinkName = rgx.Replace(x.gt.ai.Name, "-").ToLower()
                     })
-                    .AsNoTracking()
-                    .OrderBy(p => p.Price)
-                    .Skip((currentPage - 1) * pagesize)
-                    .Take(pagesize)
                     .ToList();
 
                     var result = new PageResult<ProductDisplay>
@@ -393,12 +400,18 @@ namespace Spectra.Controllers
 
             try
             {
-                var countDetails = _context.Products.Count();
+                var query = _context.Products.AsNoTracking();
+
+                var countDetails = query.Count();
+
                 var currentPage = page ?? 1;
 
                 using (var context = _context)
                 {
-                    var productsQuery = context.Products
+                    var productsQuery = query
+                    .OrderByDescending(p => p.SalePrice > 0 ? p.SalePrice : p.Price)
+                    .Skip((currentPage - 1) * pagesize)
+                    .Take(pagesize)
                     .Join(_context.Category, ai => ai.CategoryId, al => al.Id, (ai, al) => new { ai, al })
                     .Join(_context.Gift, gt => gt.ai.GiftId, pr => pr.Id, (gt, pr) => new { gt, pr })
                     .Select(x => new ProductDisplay
@@ -419,10 +432,6 @@ namespace Spectra.Controllers
                         Giaphantram = 100 - ((x.gt.ai.SalePrice * 100) / x.gt.ai.Price),
                         LinkName = rgx.Replace(x.gt.ai.Name, "-").ToLower()
                     })
-                    .AsNoTracking()
-                    .OrderByDescending(p => p.SalePrice > 0 ? p.SalePrice : p.Price)
-                    .Skip((currentPage - 1) * pagesize)
-                    .Take(pagesize)
                     .ToList();
 
                     var result = new PageResult<ProductDisplay>
@@ -454,12 +463,19 @@ namespace Spectra.Controllers
 
             try
             {
-                var countDetails = _context.Products.Count();
+                var query = _context.Products.AsNoTracking();
+
+                var countDetails = query.Count();
+
                 var currentPage = page ?? 1;
 
                 using (var context = _context)
                 {
-                    var productsQuery = context.Products.Join(context.Category, ai => ai.CategoryId,
+                    var productsQuery = query
+                        .OrderByDescending(p => p.Price)
+                        .Skip((currentPage - 1) * pagesize)
+                        .Take(pagesize)
+                        .Join(context.Category, ai => ai.CategoryId,
                     al => al.Id, (ai, al) => new { ai, al }).Join(context.Gift, gt => gt.ai.GiftId,
                     pr => pr.Id, (gt, pr) => new { gt, pr }).Select(x => new ProductDisplay
                     {
@@ -478,12 +494,7 @@ namespace Spectra.Controllers
                         GiftPrice = x.pr.Price,
                         Giaphantram = 100 - ((x.gt.ai.SalePrice * 100) / x.gt.ai.Price),
                         LinkName = rgx.Replace(x.gt.ai.Name, "-").ToLower()
-                    })
-                        .AsNoTracking()
-                        .OrderByDescending(p => p.Price)
-                        .Skip((currentPage - 1) * pagesize)
-                        .Take(pagesize)
-                        .ToList();
+                    }).ToList();
 
                     var result = new PageResult<ProductDisplay>
                     {
@@ -518,17 +529,21 @@ namespace Spectra.Controllers
 
                 using (var context = _context)
                 {
-                    var countDetails = context.WelcomeDetails
-                        .Where(x => x.WelcomeId == id && x.Status == true)
-                        .Count();
+                    var query = context.WelcomeDetails
+                    .AsNoTracking()
+                    .Where(x => x.WelcomeId == id && x.Status == true);
+
+                    var countDetails = query.Count();
 
                     var result = new PageResult<WelcomeDetailDisplay>
                     {
                         Count = countDetails,
                         PageIndex = currentPage,
-                        PageSize = 3,
-                        Items = context.WelcomeDetails
-                            .Where(x => x.WelcomeId == id && x.Status == true)
+                        PageSize = pagesize,
+                        Items = query
+                            .OrderByDescending(x => x.CreatedDate)
+                            .Skip((currentPage - 1) * pagesize)
+                            .Take(pagesize)
                             .Select(x => new WelcomeDetailDisplay
                             {
                                 Id = x.Id,
@@ -539,14 +554,10 @@ namespace Spectra.Controllers
                                 MetaKeyWords = x.MetaKeyWords,
                                 CreatedDate = x.CreatedDate,
                                 MetaDescription = x.MetaDescription,
-                                Description = x.Description.Substring(0, Math.Min(x.Description.Length, 200)), // Đảm bảo không vượt quá độ dài chuỗi
+                                Description = x.Description.Substring(0, Math.Min(x.Description.Length, 200)),
                                 Status = x.Status,
                                 LinkName = rgx.Replace(x.Name, "-").ToLower()
                             })
-                            .AsNoTracking()
-                            .OrderByDescending(x => x.CreatedDate)
-                            .Skip((currentPage - 1) * pagesize)
-                            .Take(pagesize)
                             .ToList()
                     };
 
@@ -575,14 +586,18 @@ namespace Spectra.Controllers
 
                 using (var context = _context)
                 {
-                    var countDetails = context.NewsDetails.Count();
+                    var query = context.NewsDetails.AsNoTracking().Where(x => x.Status == true);
+                    var countDetails = query.Count();
 
                     var result = new PageResult<NewsDetailDisplay>
                     {
                         Count = countDetails,
                         PageIndex = currentPage,
-                        PageSize = 6,
-                        Items = context.NewsDetails
+                        PageSize = pagesize,
+                        Items = query
+                            .OrderByDescending(p => p.CreatedDate)
+                            .Skip((currentPage - 1) * pagesize)
+                            .Take(pagesize)
                             .Join(context.CategoryNews, ai => ai.CategoryNewId, al => al.Id, (ai, al) => new { ai, al })
                             .Join(context.Category, ca => ca.ai.CategoryId, ne => ne.Id, (ca, ne) => new NewsDetailDisplay
                             {
@@ -601,11 +616,6 @@ namespace Spectra.Controllers
                                 CateName = ne.Name,
                                 LinkName = rgx.Replace(ca.ai.Name, "-").ToLower()
                             })
-                            .AsNoTracking()
-                            .Where(x => x.Status == true)
-                            .OrderByDescending(p => p.CreatedDate)
-                            .Skip((currentPage - 1) * pagesize)
-                            .Take(pagesize)
                             .ToList()
                     };
 
@@ -634,14 +644,18 @@ namespace Spectra.Controllers
 
                 using (var context = _context)
                 {
-                    var countDetails = context.NewsDetails.Count();
+                    var query = context.NewsDetails.AsNoTracking();
+                    var countDetails = query.Count();
 
                     var result = new PageResult<NewsDetailDisplay>
                     {
                         Count = countDetails,
                         PageIndex = currentPage,
-                        PageSize = 5,
-                        Items = context.NewsDetails
+                        PageSize = pagesize,
+                        Items = query
+                            .OrderByDescending(p => p.CreatedDate)
+                            .Skip((currentPage - 1) * pagesize)
+                            .Take(pagesize)
                             .Join(context.CategoryNews, ai => ai.CategoryNewId, al => al.Id, (ai, al) => new { ai, al })
                             .Join(context.Category, ca => ca.ai.CategoryId, ne => ne.Id, (ca, ne) => new NewsDetailDisplay
                             {
@@ -658,10 +672,6 @@ namespace Spectra.Controllers
                                 CateName = ne.Name,
                                 LinkName = rgx.Replace(ca.ai.Name, "-").ToLower()
                             })
-                            .AsNoTracking()
-                            .OrderByDescending(p => p.CreatedDate)
-                            .Skip((currentPage - 1) * pagesize)
-                            .Take(pagesize)
                             .ToList()
                     };
 
@@ -690,14 +700,18 @@ namespace Spectra.Controllers
 
                 using (var context = _context)
                 {
-                    var countDetails = context.NewsDetails.Count();
+                    var query = context.NewsDetails.AsNoTracking().Where(x => x.Status == true);
+                    var countDetails = query.Count();
 
                     var result = new PageResult<NewsDetailDisplay>
                     {
                         Count = countDetails,
                         PageIndex = currentPage,
-                        PageSize = 6,
-                        Items = context.NewsDetails
+                        PageSize = pagesize,
+                        Items = query
+                            .OrderBy(p => p.CreatedDate)
+                            .Skip((currentPage - 1) * pagesize)
+                            .Take(pagesize)
                             .Join(context.CategoryNews, ai => ai.CategoryNewId, al => al.Id, (ai, al) => new { ai, al })
                             .Join(context.Category, ca => ca.ai.CategoryId, ne => ne.Id, (ca, ne) => new NewsDetailDisplay
                             {
@@ -716,11 +730,6 @@ namespace Spectra.Controllers
                                 CateName = ne.Name,
                                 LinkName = rgx.Replace(ca.ai.Name, "-").ToLower()
                             })
-                            .AsNoTracking()
-                            .Where(x => x.Status == true)
-                            .OrderBy(p => p.CreatedDate)
-                            .Skip((currentPage - 1) * pagesize)
-                            .Take(pagesize)
                             .ToList()
                     };
 
@@ -749,18 +758,22 @@ namespace Spectra.Controllers
 
                 using (var context = _context)
                 {
-                    var countDetails = context.NewsDetails
-                        .Where(x => x.CategoryNewId == id && x.Status == true)
-                        .Count();
+                    var query = context.NewsDetails
+                        .AsNoTracking()
+                        .Where(x => x.CategoryNewId == id && x.Status == true);
+
+                    var countDetails = query.Count();
 
                     var result = new PageResult<NewsDetailDisplay>
                     {
                         Count = countDetails,
                         PageIndex = currentPage,
-                        PageSize = 4,
-                        Items = context.NewsDetails
+                        PageSize = pagesize,
+                        Items = query
+                            .OrderByDescending(x => x.CreatedDate)
+                            .Skip((currentPage - 1) * pagesize)
+                            .Take(pagesize)
                             .Join(context.CategoryNews, ai => ai.CategoryNewId, al => al.Id, (ai, al) => new { ai, al })
-                            .Where(x => x.ai.CategoryNewId == id && x.ai.Status == true)
                             .Select(x => new NewsDetailDisplay
                             {
                                 Id = x.ai.Id,
@@ -775,10 +788,6 @@ namespace Spectra.Controllers
                                 Status = x.ai.Status,
                                 LinkName = rgx.Replace(x.ai.Name, "-").ToLower()
                             })
-                            .AsNoTracking()
-                            .OrderByDescending(x => x.CreatedDate)
-                            .Skip((currentPage - 1) * pagesize)
-                            .Take(pagesize)
                             .ToList()
                     };
 
@@ -807,18 +816,21 @@ namespace Spectra.Controllers
 
                 using (var context = _context)
                 {
-                    var countDetails = context.NewsDetails
-                        .Where(x => x.CategoryNewId == id && x.Status == true)
-                        .Count();
+                    var query = context.NewsDetails
+                        .AsNoTracking()
+                        .Where(x => x.CategoryNewId == id && x.Status == true);
+                    var countDetails = query.Count();
 
                     var result = new PageResult<NewsDetailDisplay>
                     {
                         Count = countDetails,
                         PageIndex = currentPage,
-                        PageSize = 3,
-                        Items = context.NewsDetails
+                        PageSize = pagesize,
+                        Items = query
+                            .OrderByDescending(x => x.CreatedDate)
+                            .Skip((currentPage - 1) * pagesize)
+                            .Take(pagesize)
                             .Join(context.CategoryNews, ai => ai.CategoryNewId, al => al.Id, (ai, al) => new { ai, al })
-                            .Where(x => x.ai.CategoryNewId == id && x.ai.Status == true)
                             .Select(x => new NewsDetailDisplay
                             {
                                 Id = x.ai.Id,
@@ -834,10 +846,6 @@ namespace Spectra.Controllers
                                 Status = x.ai.Status,
                                 LinkName = rgx.Replace(x.ai.Name, "-").ToLower()
                             })
-                            .AsNoTracking()
-                            .OrderByDescending(x => x.CreatedDate)
-                            .Skip((currentPage - 1) * pagesize)
-                            .Take(pagesize)
                             .ToList()
                     };
 
@@ -866,18 +874,21 @@ namespace Spectra.Controllers
 
                 using (var context = _context)
                 {
-                    var countDetails = context.ServiceDetails
-                        .Where(x => x.ServiceId == id && x.Status == true)
-                        .Count();
+                    var query = context.ServiceDetails
+                        .AsNoTracking()
+                        .Where(x => x.ServiceId == id && x.Status == true);
+                    var countDetails = query.Count();
 
                     var result = new PageResult<ServiceDetailDisplay>
                     {
                         Count = countDetails,
                         PageIndex = currentPage,
-                        PageSize = 6,
-                        Items = context.ServiceDetails
+                        PageSize = pagesize,
+                        Items = query
+                            .OrderByDescending(x => x.CreatedDate)
+                            .Skip((currentPage - 1) * pagesize)
+                            .Take(pagesize)
                             .Join(context.Services, ai => ai.ServiceId, al => al.Id, (ai, al) => new { ai, al })
-                            .Where(x => x.ai.ServiceId == id && x.ai.Status == true)
                             .Select(x => new ServiceDetailDisplay
                             {
                                 Id = x.ai.Id,
@@ -893,10 +904,6 @@ namespace Spectra.Controllers
                                 Status = x.ai.Status,
                                 LinkName = rgx.Replace(x.ai.Name, "-").ToLower()
                             })
-                            .AsNoTracking()
-                            .OrderByDescending(x => x.CreatedDate)
-                            .Skip((currentPage - 1) * pagesize)
-                            .Take(pagesize)
                             .ToList()
                     };
 
@@ -925,19 +932,21 @@ namespace Spectra.Controllers
 
                 using (var context = _context)
                 {
-                    var countDetails = context.Products
-                        .Where(x => x.CategoryId == id)
-                        .Count();
+                    var query = context.Products.AsNoTracking().Where(x => x.CategoryId == id);
+
+                    var countDetails = query.Count();
 
                     var result = new PageResult<ProductDisplay>
                     {
                         Count = countDetails,
                         PageIndex = currentPage,
-                        PageSize = 6,
-                        Items = context.Products
+                        PageSize = pagesize,
+                        Items = query
+                            .OrderByDescending(x => x.CreatedDate)
+                            .Skip((currentPage - 1) * pagesize)
+                            .Take(pagesize)
                             .Join(context.Category, ai => ai.CategoryId, al => al.Id, (ai, al) => new { ai, al })
                             .Join(context.Gift, gt => gt.ai.GiftId, pr => pr.Id, (gt, pr) => new { gt, pr })
-                            .Where(x => x.gt.ai.CategoryId == id)
                             .Select(x => new ProductDisplay
                             {
                                 Id = x.gt.ai.Id,
@@ -959,10 +968,6 @@ namespace Spectra.Controllers
                                 Giaphantram = 100 - ((x.gt.ai.SalePrice * 100) / x.gt.ai.Price),
                                 LinkName = rgx.Replace(x.gt.ai.Name, "-").ToLower()
                             })
-                            .AsNoTracking()
-                            .OrderByDescending(x => x.CreatedDate)
-                            .Skip((currentPage - 1) * pagesize)
-                            .Take(pagesize)
                             .ToList()
                     };
 
@@ -992,14 +997,17 @@ namespace Spectra.Controllers
 
                 using (var context = _context)
                 {
-                    var countDetails = context.WelcomeDetails.Count();
+                    var query = context.WelcomeDetails.AsNoTracking();
+                    var countDetails = query.Count();
 
                     var result = new PageResult<WelcomeDetailDisplay>
                     {
                         Count = countDetails,
                         PageIndex = currentPage,
-                        PageSize = 5,
-                        Items = context.WelcomeDetails
+                        PageSize = pagesize,
+                        Items = query
+                            .Skip((currentPage - 1) * pagesize)
+                            .Take(pagesize)
                             .Join(context.Welcomes, ai => ai.WelcomeId, al => al.Id, (ai, al) => new { ai, al })
                             .Select(x => new WelcomeDetailDisplay
                             {
@@ -1013,9 +1021,6 @@ namespace Spectra.Controllers
                                 Status = x.ai.Status,
                                 LinkName = rgx.Replace(x.ai.Name, "-").ToLower()
                             })
-                            .AsNoTracking()
-                            .Skip((currentPage - 1) * pagesize)
-                            .Take(pagesize)
                             .ToList()
                     };
 
@@ -1044,14 +1049,17 @@ namespace Spectra.Controllers
 
                 using (var context = _context)
                 {
-                    var countDetails = context.ServiceDetails.Count();
+                    var query = context.ServiceDetails.AsNoTracking();
+                    var countDetails = query.Count();
 
                     var result = new PageResult<ServiceDetailDisplay>
                     {
                         Count = countDetails,
                         PageIndex = currentPage,
-                        PageSize = 5,
-                        Items = context.ServiceDetails
+                        PageSize = pagesize,
+                        Items = query
+                            .Skip((currentPage - 1) * pagesize)
+                            .Take(pagesize)
                             .Join(context.Services, ai => ai.ServiceId, al => al.Id, (ai, al) => new { ai, al })
                             .Select(x => new ServiceDetailDisplay
                             {
@@ -1070,9 +1078,6 @@ namespace Spectra.Controllers
                                 ServiceName = x.al.Name,
                                 LinkName = rgx.Replace(x.ai.Name, "-").ToLower()
                             })
-                            .AsNoTracking()
-                            .Skip((currentPage - 1) * pagesize)
-                            .Take(pagesize)
                             .ToList()
                     };
 

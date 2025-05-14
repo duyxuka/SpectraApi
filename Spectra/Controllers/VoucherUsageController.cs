@@ -46,6 +46,21 @@ namespace Spectra.Controllers
             return Ok(voucherUsage);
         }
 
+        [HttpPost]
+        [Route("CheckUsage")]
+        public async Task<ActionResult<bool>> CheckVoucherUsage([FromBody] VoucherUsage request)
+        {
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(ModelState);
+            }
+
+            var isUsed = await _context.VoucherUsages.AnyAsync(
+                vu => vu.VoucherId == request.VoucherId && vu.CustomerId == request.CustomerId);
+
+            return Ok(isUsed);
+        }
+
         // PUT: api/VoucherUsage/5
         [HttpPost]
         [Route("PutVoucherUsage")]
@@ -87,15 +102,24 @@ namespace Spectra.Controllers
             // Giảm số lượng voucher
             voucher.Quantity--;
 
-            _context.VoucherUsages.Add(new VoucherUsage
+            // Tạo một đối tượng VoucherUsage mới và gán giá trị
+            var newVoucherUsage = new VoucherUsage
             {
                 VoucherId = voucherUsage.VoucherId,
                 CustomerId = voucherUsage.CustomerId,
-                UsedDate = DateTime.Now
-            });
+                UsedDate = DateTime.Now  // Đặt UsedDate là thời gian hiện tại
+            };
+
+            _context.VoucherUsages.Add(newVoucherUsage); // Thêm *mới* vào context
             await _context.SaveChangesAsync();
 
-            return CreatedAtAction("GetVoucherUsage", new { id = voucherUsage.Id }, voucherUsage);
+            return CreatedAtAction("GetVoucherUsage", new { id = newVoucherUsage.Id }, new
+            {
+                Id = newVoucherUsage.Id,
+                VoucherId = newVoucherUsage.VoucherId,
+                CustomerId = newVoucherUsage.CustomerId,
+                UsedDate = newVoucherUsage.UsedDate
+            });
         }
 
         // DELETE: api/VoucherUsage/5

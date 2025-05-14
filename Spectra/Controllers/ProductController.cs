@@ -226,6 +226,7 @@ namespace Spectra.Controllers
                         Name = x.gt.ai.Name,
                         CategoryId = x.gt.ai.CategoryId,
                         GiftId = x.gt.ai.GiftId,
+                        WarrantyMonth = x.gt.ai.WarrantyMonth,
                         CategoryName = x.gt.al.Name,
                         CategoryWaranty = x.gt.al.Option
                     })
@@ -251,23 +252,22 @@ namespace Spectra.Controllers
 
             try
             {
-                var countDetails = _context.Products
+                var query = _context.Products
                     .AsNoTracking()
                     .Join(_context.Category, ai => ai.CategoryId, al => al.Id, (ai, al) => new { ai, al })
                     .Join(_context.Gift, gt => gt.ai.GiftId, pr => pr.Id, (gt, pr) => new { gt, pr })
-                    .Where(x => x.gt.al.Name.ToLower().Contains("máy hút sữa".ToLower()))
-                    .Count();
+                    .Where(x => x.gt.al.Name.ToLower().Contains("máy hút sữa".ToLower()));
+                var countDetails = query.Count();
 
                 var result = new PageResult<ProductDisplay>
                 {
                     Count = countDetails,
                     PageIndex = page ?? 1,
                     PageSize = pagesize,
-                    Items = _context.Products
-                        .AsNoTracking()
-                        .Join(_context.Category, ai => ai.CategoryId, al => al.Id, (ai, al) => new { ai, al })
-                        .Join(_context.Gift, gt => gt.ai.GiftId, pr => pr.Id, (gt, pr) => new { gt, pr })
-                        .Where(x => x.gt.al.Name.ToLower().Contains("máy hút sữa".ToLower()))
+                    Items = query
+                        .OrderByDescending(x => x.gt.ai.CreatedDate) // Thay đổi phương thức sắp xếp nếu cần thiết
+                        .Skip((page - 1 ?? 0) * pagesize)
+                        .Take(pagesize)
                         .Select(x => new ProductDisplay
                         {
                             Id = x.gt.ai.Id,
@@ -280,9 +280,6 @@ namespace Spectra.Controllers
                             Giaphantram = 100 - ((x.gt.ai.SalePrice * 100) / x.gt.ai.Price),
                             LinkName = rgx.Replace(x.gt.ai.Name, "-").ToLower()
                         })
-                        .OrderByDescending(x => x.CreatedDate) // Thay đổi phương thức sắp xếp nếu cần thiết
-                        .Skip((page - 1 ?? 0) * pagesize)
-                        .Take(pagesize)
                         .ToList()
                 };
 
@@ -308,23 +305,22 @@ namespace Spectra.Controllers
 
             try
             {
-                var countDetails = _context.Products
+                var query = _context.Products
                     .AsNoTracking()
                     .Join(_context.Category, ai => ai.CategoryId, al => al.Id, (ai, al) => new { ai, al })
                     .Join(_context.Gift, gt => gt.ai.GiftId, pr => pr.Id, (gt, pr) => new { gt, pr })
-                    .Where(x => x.gt.al.Name.ToLower().Contains("tiệt trùng"))
-                    .Count();
+                    .Where(x => x.gt.al.Name.ToLower().Contains("tiệt trùng"));
+                var countDetails = query.Count();
 
                 var result = new PageResult<ProductDisplay>
                 {
                     Count = countDetails,
                     PageIndex = page ?? 1,
                     PageSize = pagesize,
-                    Items = _context.Products
-                        .AsNoTracking()
-                        .Join(_context.Category, ai => ai.CategoryId, al => al.Id, (ai, al) => new { ai, al })
-                        .Join(_context.Gift, gt => gt.ai.GiftId, pr => pr.Id, (gt, pr) => new { gt, pr })
-                        .Where(x => x.gt.al.Name.ToLower().Contains("tiệt trùng"))
+                    Items = query
+                        .OrderByDescending(x => x.gt.ai.CreatedDate)
+                        .Skip((page - 1 ?? 0) * pagesize)
+                        .Take(pagesize)
                         .Select(x => new ProductDisplay
                         {
                             Id = x.gt.ai.Id,
@@ -337,9 +333,6 @@ namespace Spectra.Controllers
                             Giaphantram = 100 - ((x.gt.ai.SalePrice * 100) / x.gt.ai.Price),
                             LinkName = rgx.Replace(x.gt.ai.Name, "-").ToLower()
                         })
-                        .OrderByDescending(x => x.CreatedDate)
-                        .Skip((page - 1 ?? 0) * pagesize)
-                        .Take(pagesize)
                         .ToList()
                 };
 
@@ -363,23 +356,23 @@ namespace Spectra.Controllers
 
             try
             {
-                var countDetails = _context.Products
+                var query = _context.Products
                     .AsNoTracking()
                     .Join(_context.Category, ai => ai.CategoryId, al => al.Id, (ai, al) => new { ai, al })
                     .Join(_context.Gift, gt => gt.ai.GiftId, pr => pr.Id, (gt, pr) => new { gt, pr })
-                    .Where(x => x.gt.al.Name.ToLower().Contains("trữ sữa"))
-                    .Count();
+                    .Where(x => x.gt.al.Name.ToLower().Contains("trữ sữa"));
+
+                var countDetails = query.Count();
 
                 var result = new PageResult<ProductDisplay>
                 {
                     Count = countDetails,
                     PageIndex = page ?? 1,
                     PageSize = pagesize,
-                    Items = _context.Products
-                        .AsNoTracking()
-                        .Join(_context.Category, ai => ai.CategoryId, al => al.Id, (ai, al) => new { ai, al })
-                        .Join(_context.Gift, gt => gt.ai.GiftId, pr => pr.Id, (gt, pr) => new { gt, pr })
-                        .Where(x => x.gt.al.Name.ToLower().Contains("trữ sữa"))
+                    Items = query
+                        .OrderByDescending(x => x.gt.ai.CreatedDate) // Adjust the sorting method as needed
+                        .Skip((page - 1 ?? 0) * pagesize)
+                        .Take(pagesize)
                         .Select(x => new ProductDisplay
                         {
                             Id = x.gt.ai.Id,
@@ -392,9 +385,7 @@ namespace Spectra.Controllers
                             Giaphantram = 100 - ((x.gt.ai.SalePrice * 100) / x.gt.ai.Price),
                             LinkName = rgx.Replace(x.gt.ai.Name, "-").ToLower()
                         })
-                        .OrderByDescending(x => x.CreatedDate) // Adjust the sorting method as needed
-                        .Skip((page - 1 ?? 0) * pagesize)
-                        .Take(pagesize)
+                        
                         .ToList()
                 };
 
@@ -420,23 +411,22 @@ namespace Spectra.Controllers
 
             try
             {
-                var countDetails = _context.Products
+                var query = _context.Products
                     .AsNoTracking()
                     .Join(_context.Category, ai => ai.CategoryId, al => al.Id, (ai, al) => new { ai, al })
                     .Join(_context.Gift, gt => gt.ai.GiftId, pr => pr.Id, (gt, pr) => new { gt, pr })
-                    .Where(x => x.gt.al.Name.ToLower().Contains("bình sữa"))
-                    .Count();
+                    .Where(x => x.gt.al.Name.ToLower().Contains("bình sữa"));
+                var countDetails = query.Count();
 
                 var result = new PageResult<ProductDisplay>
                 {
                     Count = countDetails,
                     PageIndex = page ?? 1,
                     PageSize = pagesize,
-                    Items = _context.Products
-                        .AsNoTracking()
-                        .Join(_context.Category, ai => ai.CategoryId, al => al.Id, (ai, al) => new { ai, al })
-                        .Join(_context.Gift, gt => gt.ai.GiftId, pr => pr.Id, (gt, pr) => new { gt, pr })
-                        .Where(x => x.gt.al.Name.ToLower().Contains("bình sữa"))
+                    Items = query
+                        .OrderByDescending(x => x.gt.ai.CreatedDate) // Thay đổi phương thức sắp xếp nếu cần thiết
+                        .Skip((page - 1 ?? 0) * pagesize)
+                        .Take(pagesize)
                         .Select(x => new ProductDisplay
                         {
                             Id = x.gt.ai.Id,
@@ -449,9 +439,6 @@ namespace Spectra.Controllers
                             Giaphantram = 100 - ((x.gt.ai.SalePrice * 100) / x.gt.ai.Price),
                             LinkName = rgx.Replace(x.gt.ai.Name, "-").ToLower()
                         })
-                        .OrderByDescending(x => x.CreatedDate) // Thay đổi phương thức sắp xếp nếu cần thiết
-                        .Skip((page - 1 ?? 0) * pagesize)
-                        .Take(pagesize)
                         .ToList()
                 };
 
@@ -484,6 +471,7 @@ namespace Spectra.Controllers
                     .Join(_context.Category, ai => ai.CategoryId, al => al.Id, (ai, al) => new { ai, al })
                     .Join(_context.Gift, gt => gt.ai.GiftId, pr => pr.Id, (gt, pr) => new { gt, pr })
                     .Where(x => x.gt.al.Name.ToLower().Contains("hâm sữa") || x.gt.al.Name.ToLower().Contains("phụ kiện"))
+                    .Take(3)
                     .Select(x => new ProductDisplay
                     {
                         Id = x.gt.ai.Id,
@@ -503,7 +491,6 @@ namespace Spectra.Controllers
                         Giaphantram = 100 - ((x.gt.ai.SalePrice * 100) / x.gt.ai.Price),
                         LinkName = rgx.Replace(x.gt.ai.Name, "-").ToLower()
                     })
-                    .Take(3)
                     .ToList();
 
                 return Ok(data);
@@ -817,6 +804,7 @@ namespace Spectra.Controllers
                 .Join(_context.Category, ai => ai.CategoryId, al => al.Id, (ai, al) => new { ai, al })
                 .Join(_context.Gift, gt => gt.ai.GiftId, pr => pr.Id, (gt, pr) => new { gt, pr })
                 .OrderByDescending(x => x.gt.ai.Code)
+                .Take(3)
                 .Select(x => new ProductDisplay
                 {
                     Id = x.gt.ai.Id,
@@ -838,7 +826,6 @@ namespace Spectra.Controllers
                     Giaphantram = 100 - ((x.gt.ai.SalePrice * 100) / x.gt.ai.Price),
                     LinkName = rgx.Replace(x.gt.ai.Name, "-").ToLower()
                 })
-                .Take(3)
                 .ToList();
 
             return data;

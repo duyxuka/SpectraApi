@@ -113,6 +113,7 @@ namespace Spectra.Controllers
         {
             var voucher = _context.Vouchers.AsNoTracking()
                         .Where(x => x.VoucherCode == code && x.Status == true)
+                        .Where(x => x.Quantity > 0)
                         .Select(x => new VoucherDisplay
                         {
                             Id = x.Id,

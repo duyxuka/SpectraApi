@@ -29,14 +29,16 @@ namespace Spectra.Controllers
         [AllowAnonymous]
         public IEnumerable<ContactSeo> GetContactSeos()
         {
-            return _context.ContactSeos;
+            return _context.ContactSeos.AsNoTracking().OrderByDescending(x => x.Id).ToList(); ;
         }
         [HttpGet]
         [Route("ContactUser")]
         [AllowAnonymous]
         public async Task<IActionResult> GetContactsUser()
         {
-            var data = await _context.ContactSeos.Select(x => new ContactSeoDisplay
+            var data = await _context.ContactSeos
+                .Where(x => x.Status == true)
+                .Select(x => new ContactSeoDisplay
             {
                 Id = x.Id,
                 TitleSeo = x.TitleSeo,
@@ -102,6 +104,7 @@ namespace Spectra.Controllers
             }
 
             _context.ContactSeos.Add(contactSeo);
+            contactSeo.Status = false;
             contactSeo.CreatedDate = DateTime.Now;
             await _context.SaveChangesAsync();
 

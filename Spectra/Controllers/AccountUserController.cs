@@ -106,7 +106,8 @@ namespace Spectra.Controllers
         // PUT: api/AccountUser/5
         [HttpPost]
         [Route("PutAccountUser")]
-        [BinaryAuthorize("User", ActionType.Sua)]
+        [AllowAnonymous]
+        //[BinaryAuthorize("User", ActionType.Sua)]
         public async Task<IActionResult> PutAccountUser([FromBody] AccountUser accountUser)
         {
             if (!ModelState.IsValid)
@@ -400,25 +401,35 @@ namespace Spectra.Controllers
 
             return new JwtSecurityTokenHandler().WriteToken(token);
         }
-
+        public class ChangePasswordDto
+        {
+            public string PasswordOld { get; set; }
+            public string Password { get; set; }
+        }
 
         // POST: api/AccountUsers/ChangePassword/1
         [HttpPost]
         [Route("ChangePassword/{id}")]
         [BinaryAuthorize("User", ActionType.Sua)]
-        public async Task<IActionResult> ChangePassword([FromRoute] int? id, [FromBody] string password)
+        public async Task<IActionResult> ChangePassword([FromRoute] int? id, [FromBody] ChangePasswordDto model)
         {
             var userIdFromToken = User.FindFirst("UserId")?.Value;
 
             if (userIdFromToken != id?.ToString())
                 return Forbid();
 
-            var result = await _context.AccountUsers.FindAsync(id);
-            if (result != null)
-            {
-                result.Password = BCrypt.Net.BCrypt.HashPassword(password);
-                await _context.SaveChangesAsync();
-            }
+            var user = await _context.AccountUsers.FindAsync(id);
+            if (user == null)
+                return NotFound("Tài khoản không tồn tại.");
+
+            // Kiểm tra mật khẩu cũ
+            if (!BCrypt.Net.BCrypt.Verify(model.PasswordOld, user.Password))
+                return BadRequest("Mật khẩu hiện tại không chính xác.");
+
+            // Cập nhật mật khẩu mới
+            user.Password = BCrypt.Net.BCrypt.HashPassword(model.Password);
+            await _context.SaveChangesAsync();
+
             return NoContent();
         }
 
@@ -470,16 +481,17 @@ namespace Spectra.Controllers
                         {
                             smtp.Send(mess);
                         }
-                        account.Password = new_pass;
+                        account.Password = BCrypt.Net.BCrypt.HashPassword(new_pass);
                         _context.Update(account);
                         _context.SaveChanges();
                     }
                     return NoContent();
                 }
             }
-            catch (Exception)
+            catch (Exception ex)
             {
-
+                Console.WriteLine("Error: " + ex.Message);
+                return StatusCode(500, "Internal Server Error");
             }
             return NoContent();
         }

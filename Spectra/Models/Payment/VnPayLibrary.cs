@@ -34,7 +34,6 @@ namespace Spectra.Models.Payment
 
             if (collection.Count > 0)
             {
-                var vnPay = new VnPayLibrary(_context);
 
                 foreach (var (key, value) in collection)
                 {
@@ -47,20 +46,17 @@ namespace Spectra.Models.Payment
                 var orderId = Convert.ToInt64(GetResponseData("vnp_TxnRef"));
                 var vnPayTranId = Convert.ToInt64(GetResponseData("vnp_TransactionNo"));
                 var vnpResponseCode = GetResponseData("vnp_ResponseCode");
-                var vnpSecureHash =
-                    collection.FirstOrDefault(k => k.Key == "vnp_SecureHash").Value; //hash của dữ liệu trả về
+                var vnpSecureHash = collection.FirstOrDefault(k => k.Key == "vnp_SecureHash").Value; //hash của dữ liệu trả về
                 var orderInfo = GetResponseData("vnp_OrderInfo");
                 //var orderdataId = vnPay.GetResponseData("vnp_OrderType");
                 var vnp_Amount = Convert.ToInt64(GetResponseData("vnp_Amount")) / 100;
                 var vnp_TransactionStatus = GetResponseData("vnp_TransactionStatus");
-                var checkSignature =
-                    ValidateSignature(vnpSecureHash, hashSecret); //check Signature
+                var checkSignature = ValidateSignature(vnpSecureHash, hashSecret); //check Signature
 
                 if (!checkSignature)
-                    return new PaymentResponseModel()
-                    {
-                        Success = "2"
-                    };
+                {
+                    return new PaymentResponseModel { Success = "2" }; // Invalid Signature
+                }
                 if (checkSignature)
                 {
                     payments.Success = "0";
@@ -133,9 +129,8 @@ namespace Spectra.Models.Payment
 
                 var orderId = Convert.ToString(GetResponseData("vnp_TxnRef"));
                 var vnPayTranId = Convert.ToInt64(GetResponseData("vnp_TransactionNo"));
-                var vnpResponseCode = GetResponseData("vnp_ResponseCode");
-                var vnpSecureHash =
-                    collection.FirstOrDefault(k => k.Key == "vnp_SecureHash").Value; //hash của dữ liệu trả về
+                var vnpResponseCode = GetResponseData("vnp_ResponseCode") ?? GetResponseData("vnp_TransactionStatus");
+                var vnpSecureHash = collection.FirstOrDefault(k => k.Key == "vnp_SecureHash").Value; //hash của dữ liệu trả về
                 var orderInfo = GetResponseData("vnp_OrderInfo");
                 //var orderdataId = vnPay.GetResponseData("vnp_OrderType");
                 long vnp_Amount = Convert.ToInt64(GetResponseData("vnp_Amount")) / 100;
@@ -143,54 +138,46 @@ namespace Spectra.Models.Payment
                 var tmnCode = GetResponseData("vnp_TmnCode");
                 var checkSignature = ValidateSignature(vnpSecureHash, hashSecret); //check Signature
 
-                if (checkSignature)
+                if (!checkSignature)
                 {
-                    var order = _context.Order.FirstOrDefault(x => x.Code == orderId);
+                    returnContent.Set("97", "Invalid signature");
+                    return returnContent;
+                }
 
-                    if (order != null)
-                    {
-                        if (order.TotalAmount == vnp_Amount)
-                        {
-                            if (order.Status == 0)
-                            {
-                                if (vnpResponseCode == "00" && vnp_TransactionStatus == "00")
-                                {
-                                    order.Status = 0; // Assuming 1 is the status for successful payment
-                                    await _context.SaveChangesAsync();
-                                    returnContent.Set("00", "Confirm Success");
-                                }
-                                else
-                                {
-                                    order.Status = 7; // Assuming 7 is the status for failed payment
-                                    await _context.SaveChangesAsync();
-                                    returnContent.Set("00", "Confirm Success");
-                                }
-                            }
-                            else
-                            {
-                                returnContent.Set("02", "Order already confirmed");
-                            }
-                        }
-                        else
-                        {
-                            returnContent.Set("04", "Invalid amount");
-                        }
-                    }
-                    else
-                    {
-                        returnContent.Set("01", "Order not found");
-                    }
+                var order = _context.Order.FirstOrDefault(x => x.Code == orderId);
+
+                if (order == null)
+                {
+                    returnContent.Set("01", "Order not found");
+                }
+                else if (order.TotalAmount != vnp_Amount)
+                {
+                    returnContent.Set("04", "Invalid amount");
+                }
+                else if (order.Status != 0)
+                {
+                    returnContent.Set("02", "Order already confirmed");
                 }
                 else
                 {
-                    returnContent.Set("97", "Invalid signature");
+                    if (vnpResponseCode == "00" && vnp_TransactionStatus == "00")
+                    {
+                        order.Status = 0; // Đơn hàng chờ xác nhận
+                    }
+                    else
+                    {
+                        order.Status = 7; // Thất bại
+                    }
+
+                    await _context.SaveChangesAsync();
+                    returnContent.Set("00", "Confirm Success");
                 }
             }
             catch (Exception e)
             {
-                returnContent.Set("99", "Input data required" + e.Message);
+                returnContent.Set("99", "Input data required: " + e.Message);
             }
-            
+
             return returnContent;
         }
         public string GetIpAddress(HttpContext context)
@@ -267,6 +254,7 @@ namespace Spectra.Models.Payment
 
         public bool ValidateSignature(string inputHash, string secretKey)
         {
+            if (string.IsNullOrEmpty(inputHash)) return false;
             var rspRaw = GetResponseData();
             var myChecksum = HmacSha512(secretKey, rspRaw);
             return myChecksum.Equals(inputHash, StringComparison.InvariantCultureIgnoreCase);
