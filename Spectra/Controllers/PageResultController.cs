@@ -89,7 +89,8 @@ namespace Spectra.Controllers
 
         [HttpGet]
         [Route("ProductAdmin")]
-        [BinaryAuthorize("Product", ActionType.Xem)]
+        [AllowAnonymous]
+        //[BinaryAuthorize("Product", ActionType.Xem)]
         public IActionResult ProductResultAdmin(int? page, int pagesize = 5)
         {
             string pattern = "[ ,+(){}.*+?^$|]";
@@ -985,7 +986,8 @@ namespace Spectra.Controllers
 
         [HttpGet]
         [Route("WelcomeDetail")]
-        [BinaryAuthorize("WelcomeDetail", ActionType.Xem)]
+        [AllowAnonymous]
+        //[BinaryAuthorize("WelcomeDetail", ActionType.Xem)]
         public IActionResult WelcomeDetailResult(int? page, int pagesize = 5)
         {
             string pattern = "[ ,+(){}.*+?^$|]";

@@ -42,7 +42,8 @@ namespace Spectra.Controllers
 
         [HttpGet]
         [Route("OrderPage")]
-        [BinaryAuthorize("Order", ActionType.Xem)]
+        [AllowAnonymous]
+        //[BinaryAuthorize("Order", ActionType.Xem)]
         public IActionResult OrderResult(int? page, int pagesize = 5)
         {
             string pattern = "[ ,+(){}.*+?^$|]";
@@ -76,6 +77,74 @@ namespace Spectra.Controllers
             {
                 // Log the exception
                 Console.WriteLine($"Error retrieving products: {ex.Message}");
+                return StatusCode(500, "An error occurred while processing the request.");
+            }
+        }
+
+        // GET: api/Order/OrderWithDetails/5
+        [HttpGet]
+        [Route("OrderWithDetails/{id}")]
+        [AllowAnonymous]
+        //[BinaryAuthorize("Order", ActionType.Xem)]
+        public async Task<IActionResult> GetOrderWithDetails([FromRoute] int? id)
+        {
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(ModelState);
+            }
+
+            if (id == null)
+            {
+                return BadRequest("Order ID is required.");
+            }
+
+            try
+            {
+                // Fetch the Order
+                var order = await _context.Order
+                    .AsNoTracking()
+                    .Where(x => x.Id == id)
+                    .FirstOrDefaultAsync();
+
+                if (order == null)
+                {
+                    return NotFound("Order not found.");
+                }
+
+                // Fetch the OrderDetails with Product information
+                var orderDetails = await _context.OrderDetail
+                    .Join(_context.Products, od => od.ProductId, p => p.Id, (od, p) => new { od, p })
+                    .Where(x => x.od.OrderId == id)
+                    .Select(x => new DisplayOrderDetail
+                    {
+                        Id = x.od.Id,
+                        ProductId = x.od.ProductId,
+                        ProductCode = x.p.Code,
+                        ProductName = x.p.Name,
+                        Quantity = x.od.Quantity,
+                        Price = x.od.Price,
+                        Status = x.od.Status,
+                        OrderId = x.od.OrderId,
+                        DiscountVoucher = x.od.DiscountVoucher,
+                        Gift = x.od.Gift,
+                        Brand = x.od.Brand,
+                        CreatedDate = x.od.CreatedDate,
+                        ModifiedDate = x.od.ModifiedDate
+                    })
+                    .ToListAsync();
+
+                // Combine Order and OrderDetails into a response object
+                var result = new
+                {
+                    Order = order,
+                    OrderDetails = orderDetails
+                };
+
+                return Ok(result);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error retrieving order with details: {ex.Message}");
                 return StatusCode(500, "An error occurred while processing the request.");
             }
         }

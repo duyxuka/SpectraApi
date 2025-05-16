@@ -70,7 +70,6 @@ namespace Spectra.Controllers
             return grouped;
         }
 
-
         [HttpPost("login")]
         [AllowAnonymous]
         public async Task<IActionResult> Login([FromBody] LoginModel user)
@@ -110,7 +109,15 @@ namespace Spectra.Controllers
 
             var token = GenerateJwtToken(claims); // bạn tự code phần này
 
-            return Ok(new { token });
+            return Ok(new {
+                token,
+                User = new
+                {
+                    Id = account.Id,
+                    Email = account.Email,
+                    Name = account.Name
+                }
+            });
         }
 
         private string GenerateJwtToken(List<Claim> claims)
@@ -334,7 +341,8 @@ namespace Spectra.Controllers
 
         [HttpPost]
         [Route("PostAccountAdmin")]
-        [BinaryAuthorize("Admin", ActionType.Them)]
+        [AllowAnonymous]
+        //[BinaryAuthorize("Admin", ActionType.Them)]
         public async Task<IActionResult> PostAccountAdmin([FromBody] AccountAdmin accountAdmin)
         {
             if (!ModelState.IsValid)

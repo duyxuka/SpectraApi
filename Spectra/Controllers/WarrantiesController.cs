@@ -65,7 +65,8 @@ namespace Spectra.Controllers
 
         [HttpGet]
         [Route("WrantyPage")]
-        [BinaryAuthorize("Warranties", ActionType.Xem)]
+        [AllowAnonymous]
+        //[BinaryAuthorize("Warranties", ActionType.Xem)]
         public IActionResult WarrantyResult(int? page, int pagesize = 5)
         {
             string pattern = "[ ,+(){}.*+?^$|]";

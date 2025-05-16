@@ -31,7 +31,7 @@ namespace Spectra.Controllers
         [AllowAnonymous]
         public IEnumerable<Contact> GetContacts()
         {
-            return _context.Contacts;
+            return _context.Contacts.OrderByDescending(x => x.Id).ToList();
         }
 
         // GET: api/Contact/5

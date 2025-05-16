@@ -738,43 +738,43 @@ namespace Spectra.Controllers
             {
                 var product = await _context.Products
                     .AsNoTracking()
-                    .Join(_context.Category, ai => ai.CategoryId, al => al.Id, (ai, al) => new { ai, al })
-                    .Join(_context.Gift, gt => gt.ai.GiftId, pr => pr.Id, (gt, pr) => new { gt, pr })
-                    .Where(x => x.gt.ai.Id == id)
-                    .Select(x => new ProductDisplay
+                    .Include(p => p.Category)
+                    .Include(p => p.Gift)
+                    .Where(p => p.Id == id)
+                    .Select(p => new ProductDisplay
                     {
-                        Id = x.gt.ai.Id,
-                        Code = x.gt.ai.Code,
-                        Name = x.gt.ai.Name,
-                        Description = x.gt.ai.Description,
-                        TitleDescription = x.gt.ai.TitleDescription,
-                        Instruct = x.gt.ai.Instruct,
-                        TitleSeo = x.gt.ai.TitleSeo,
-                        MetaKeyWords = x.gt.ai.MetaKeyWords,
-                        MetaDescription = x.gt.ai.MetaDescription,
-                        Price = x.gt.ai.Price,
-                        SalePrice = x.gt.ai.SalePrice,
-                        Option = x.gt.ai.Option,
-                        Images = x.gt.ai.Images,
-                        Start = x.gt.ai.Start,
-                        Ends = x.gt.ai.Ends,
-                        CategoryId = x.gt.ai.CategoryId,
-                        GiftId = x.gt.ai.GiftId,
-                        Status = x.gt.ai.Status,
-                        JobId = x.gt.ai.JobId,
-                        ScheduleStatus = x.gt.ai.ScheduleStatus,
-                        WarrantyMonth = x.gt.ai.WarrantyMonth,
-                        Information = x.gt.ai.Information,
-                        CreatedDate = x.gt.ai.CreatedDate,
-                        ModifiedDate = x.gt.ai.ModifiedDate,
-                        CategoryName = x.gt.al.Name,
-                        CategoryCode = x.gt.al.Code,
-                        GiftName = x.pr.Name,
-                        GiftPrice = x.pr.Price,
-                        Giaphantram = 100 - ((x.gt.ai.SalePrice * 100) / x.gt.ai.Price),
-                        LinkName = x.gt.ai.Name.Replace(" ", "-").ToLower()
+                        Id = p.Id,
+                        Code = p.Code,
+                        Name = p.Name,
+                        Description = p.Description,
+                        TitleDescription = p.TitleDescription,
+                        Instruct = p.Instruct,
+                        TitleSeo = p.TitleSeo,
+                        MetaKeyWords = p.MetaKeyWords,
+                        MetaDescription = p.MetaDescription,
+                        Price = p.Price,
+                        SalePrice = p.SalePrice,
+                        Option = p.Option,
+                        Images = p.Images,
+                        Start = p.Start,
+                        Ends = p.Ends,
+                        CategoryId = p.CategoryId,
+                        GiftId = p.GiftId,
+                        Status = p.Status,
+                        JobId = p.JobId,
+                        ScheduleStatus = p.ScheduleStatus,
+                        WarrantyMonth = p.WarrantyMonth,
+                        Information = p.Information,
+                        CreatedDate = p.CreatedDate,
+                        ModifiedDate = p.ModifiedDate,
+                        CategoryName = p.Category != null ? p.Category.Name : null,
+                        CategoryCode = p.Category != null ? p.Category.Code : null,
+                        GiftName = p.Gift != null ? p.Gift.Name : null,
+                        GiftPrice = p.Gift != null ? p.Gift.Price : 0,
+                        Giaphantram = (p.Price > 0) ? 100 - ((p.SalePrice * 100) / p.Price) : 0,
+                        LinkName = p.Name.Replace(" ", "-").ToLower()
                     })
-                    .FirstOrDefaultAsync();
+                    .SingleOrDefaultAsync();
 
                 if (product == null)
                 {

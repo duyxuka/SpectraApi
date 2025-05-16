@@ -59,20 +59,24 @@ namespace Spectra.Controllers
         }
         [HttpGet]
         [Route("SeriProductPage")]
-        [BinaryAuthorize("SeriProduct", ActionType.Xem)]
+        [AllowAnonymous]
+        //[BinaryAuthorize("SeriProduct", ActionType.Xem)]
         public IActionResult SeriProductResult(int? page, int pagesize = 5)
         {
             string pattern = "[ ,+(){}.*+?^$|]";
             Regex rgx = new Regex(pattern);
-
+            var currentPage = page ?? 1;
             try
             {
-                var countDetails = _context.SeriProducts.AsNoTracking().Count();
-                var currentPage = page ?? 1;
+                var query = _context.SeriProducts.AsNoTracking();
+                var countDetails = query.Count();
+
                 using (var context = _context)
                 {
-                    var SeriQuery = context.SeriProducts
-                    .AsNoTracking()
+                    var SeriQuery = query
+                    .OrderByDescending(x => x.Id)
+                    .Skip((currentPage - 1) * pagesize)
+                    .Take(pagesize)
                     .Join(_context.Locations, ai => ai.LocationId, al => al.Id, (ai, al) => new { ai, al })
                     .Join(_context.Cities, ci => ci.ai.CityId, co => co.Id, (ci, co) => new { ci, co })
                     .Join(_context.Products, pr => pr.ci.ai.ProductId, se => se.Id, (pr, se) => new { pr, se })
@@ -91,11 +95,7 @@ namespace Spectra.Controllers
                         LocationCode = x.ca.pr.ci.al.Code,
                         CreatedDate = x.ca.pr.ci.ai.CreatedDate,
                         DealerSaleDate = x.ca.pr.ci.ai.DealerSaleDate,
-                    })
-                        .OrderByDescending(x => x.Id)
-                        .AsNoTracking()
-                        .Skip((currentPage - 1) * pagesize)
-                        .Take(pagesize);
+                    });
 
                     var result = new PageResult<SeriProductDisplay>
                     {
