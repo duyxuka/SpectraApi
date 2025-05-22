@@ -89,7 +89,7 @@ namespace Spectra.Controllers
         // PUT: api/Welcome/5
         [HttpPost]
         [Route("PutWelcome")]
-        [BinaryAuthorize("Welcome", ActionType.Sua)]
+        //[BinaryAuthorize("Welcome", ActionType.Sua)]
         public async Task<IActionResult> PutWelcome( [FromBody] Welcome welcome)
         {
             if (!ModelState.IsValid)
@@ -115,7 +115,7 @@ namespace Spectra.Controllers
 
         // POST: api/Welcome
         [HttpPost]
-        [BinaryAuthorize("Welcome", ActionType.Them)]
+        //[BinaryAuthorize("Welcome", ActionType.Them)]
         public async Task<IActionResult> PostWelcome([FromBody] Welcome welcome)
         {
             if (!ModelState.IsValid)
@@ -131,7 +131,7 @@ namespace Spectra.Controllers
 
         // DELETE: api/Welcome/5
         [HttpDelete("{id}")]
-        [BinaryAuthorize("Welcome", ActionType.Xoa)]
+        //[BinaryAuthorize("Welcome", ActionType.Xoa)]
         public async Task<IActionResult> DeleteWelcome([FromRoute] int? id)
         {
             if (!ModelState.IsValid)

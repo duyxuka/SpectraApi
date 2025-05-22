@@ -16,6 +16,7 @@ namespace Spectra.Models
         public Product Product { get; set; }
         public float Price { get; set; }
         public float SalePrice { get; set; }
+        public string JobId { get; set; }
         public bool Status { get; set; }
         public DateTime CreatedDate { get; set; }
         public DateTime ModifiedDate { get; set; }

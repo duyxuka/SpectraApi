@@ -226,7 +226,7 @@ namespace Spectra.Controllers
         // PUT: api/Category/5
         [HttpPost]
         [Route("PutCategory")]
-        [BinaryAuthorize("Category", ActionType.Sua)]
+        //[BinaryAuthorize("Category", ActionType.Sua)]
         public async Task<IActionResult> PutCategoryProduct([FromBody] Category categoryProduct)
         {
             if (!ModelState.IsValid)
@@ -252,7 +252,7 @@ namespace Spectra.Controllers
 
         // POST: api/Category
         [HttpPost]
-        [BinaryAuthorize("Category", ActionType.Them)]
+        //[BinaryAuthorize("Category", ActionType.Them)]
         public async Task<IActionResult> PostCategory([FromBody] Category category)
         {
             if (!ModelState.IsValid)
@@ -268,7 +268,7 @@ namespace Spectra.Controllers
 
         // DELETE: api/Category/5
         [HttpDelete("{id}")]
-        [BinaryAuthorize("Category", ActionType.Xoa)]
+        //[BinaryAuthorize("Category", ActionType.Xoa)]
         public async Task<IActionResult> DeleteCategory([FromRoute] int? id)
         {
             if (!ModelState.IsValid)

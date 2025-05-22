@@ -30,16 +30,93 @@ namespace Spectra.Controllers
 
         // GET: api/OrderDetail
         [HttpGet]
-        [BinaryAuthorize("OrderDetail", ActionType.Xem)]
+        //[BinaryAuthorize("OrderDetail", ActionType.Xem)]
         public IEnumerable<OrderDetail> GetOrderDetail()
         {
             return _context.OrderDetail;
         }
 
+        [HttpGet]
+        [Route("TopSellingProducts")]
+        [AllowAnonymous]
+        public async Task<IActionResult> GetTopSellingProducts(int topSellingCount = 5)
+        {
+            try
+            {
+                var productSalesData = await _context.OrderDetail
+                    .AsNoTracking()
+                    .GroupBy(od => od.ProductId)
+                    .Select(g => new
+                    {
+                        ProductId = g.Key,
+                        TotalQuantitySold = g.Sum(x => x.Quantity),
+                        TotalRevenue = g.Sum(x => x.Price * x.Quantity - x.DiscountVoucher)
+                    })
+                    .OrderByDescending(x => x.TotalQuantitySold)
+                    .Take(topSellingCount)
+                    .ToListAsync();
+
+                // Nếu không có dữ liệu, trả về rỗng
+                if (!productSalesData.Any())
+                    return Ok(new List<object>());
+                
+                var productIds = productSalesData.Select(p => p.ProductId).ToList();
+
+                var productInfos = await _context.Products
+                    .AsNoTracking()
+                    .Where(p => productIds.Contains(p.Id.Value))
+                    .Include(p => p.Category)
+                    .Select(p => new
+                    {
+                        p.Id,
+                        p.Code,
+                        p.Name,
+                        p.Price,
+                        p.SalePrice,
+                        CategoryName = p.Category != null ? p.Category.Name : "Không có danh mục"
+                    })
+                    .ToListAsync();
+                
+                var result = productSalesData.Select(sale =>
+                {
+                    var product = productInfos.FirstOrDefault(p => p.Id == sale.ProductId);
+
+                    return new
+                    {
+                        ProductId = sale.ProductId,
+                        ProductCode = product?.Code ?? "Không xác định",
+                        ProductName = product?.Name ?? "Không xác định",
+                        TotalQuantitySold = sale.TotalQuantitySold,
+                        TotalRevenue = sale.TotalRevenue,
+                        CurrentPrice = product?.Price ?? 0,
+                        CurrentSalePrice = product?.SalePrice ?? 0,
+                        DiscountPercentage = (product?.Price > 0 && product?.SalePrice != null)
+                            ? (int)(100 - ((product.SalePrice * 100) / product.Price))
+                            : 0,
+                        CategoryName = product?.CategoryName ?? "Không có danh mục"
+                    };
+                }).ToList();
+
+                return Ok(result);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Lỗi khi lấy top sản phẩm: {ex.Message}");
+                return StatusCode(500, new
+                {
+                    message = "Đã xảy ra lỗi khi xử lý yêu cầu.",
+                    error = ex.Message,
+                    innerError = ex.InnerException?.Message
+                });
+            }
+        }
+
+
+
         // GET: api/OrderDetail/5
         [HttpGet]
         [Route("OderAcc/{id}")]
-        [BinaryAuthorize("OrderDetail", ActionType.Xem)]
+        //[BinaryAuthorize("OrderDetail", ActionType.Xem)]
         public async Task<IActionResult> GetOrderAccount([FromRoute] int? id)
         {
             if (!ModelState.IsValid)
@@ -71,7 +148,7 @@ namespace Spectra.Controllers
 
         // GET: api/OrderDetails/5
         [HttpGet("{id}")]
-        [BinaryAuthorize("OrderDetail", ActionType.Xem)]
+        //[BinaryAuthorize("OrderDetail", ActionType.Xem)]
         public async Task<IActionResult> GetOrderDetail([FromRoute] int? id)
         {
             if (!ModelState.IsValid)
@@ -126,7 +203,7 @@ namespace Spectra.Controllers
         // PUT: api/OrderDetails/5
         [HttpPost]
         [Route("PutProductQuantity")]
-        [BinaryAuthorize("OrderDetail", ActionType.Sua)]
+        //[BinaryAuthorize("OrderDetail", ActionType.Sua)]
         public async Task<IActionResult> PutProductQuantity([FromBody] OrderDetail orderDetail)
         {
             if (!ModelState.IsValid)
@@ -167,7 +244,7 @@ namespace Spectra.Controllers
 
         [HttpPost]
         [Route("SendEmailCancel")]
-        [BinaryAuthorize("OrderDetail", ActionType.Sua)]
+        //[BinaryAuthorize("OrderDetail", ActionType.Sua)]
         public ActionResult SendEmailCancel([FromBody] OrderEmailDto orderEmail)
         {
             try
@@ -301,7 +378,7 @@ namespace Spectra.Controllers
                         + "<h2 style='color: #10cb04;font-size: 19px;'>Bạn đã đặt hàng thành công sản phẩm của Spectra.</h2>"
                         + "<p>Bộ phận xác nhận đơn hàng của chúng tôi sẽ liên hệ để xác nhận đơn hàng với bạn.</p>"
                         + "<p>Mã đơn hàng của bạn: " + orderEmail.Code + "</p>"
-                        + "<p>Ngày đặt hàng: " + date + "</p>"
+                        + "<p>Ngày đặt hàng: " + date.ToString("dd/MM/yyyy HH:mm:ss tt zz") + "</p>"
                         + "<h4>Thông tin khách hàng đặt hàng:</h4>"
                         + accountorder
                         + "<h4>Chi tiết đơn hàng:</h4>"
@@ -343,7 +420,7 @@ namespace Spectra.Controllers
 
         // DELETE: api/OrderDetail/5
         [HttpDelete("{id}")]
-        [BinaryAuthorize("OrderDetail", ActionType.Xoa)]
+        //[BinaryAuthorize("OrderDetail", ActionType.Xoa)]
         public async Task<IActionResult> DeleteOrderDetail([FromRoute] int? id)
         {
             if (!ModelState.IsValid)

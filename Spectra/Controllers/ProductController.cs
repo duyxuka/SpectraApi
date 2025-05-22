@@ -20,7 +20,7 @@ namespace Spectra.Controllers
     [EnableCors("AddCors")]
     [Route("api/[controller]")]
     [ApiController]
-    [Authorize]
+    //[Authorize]
     
     public class ProductController : ControllerBase
     {
@@ -46,7 +46,6 @@ namespace Spectra.Controllers
                     .AsNoTracking()
                     .Join(_context.Category, ai => ai.CategoryId, al => al.Id, (ai, al) => new { ai, al })
                     .Join(_context.Gift, gt => gt.ai.GiftId, pr => pr.Id, (gt, pr) => new { gt, pr })
-                    .Where(x => x.gt.ai.Status == true)
                     .Select(x => new ProductDisplay
                     {
                         Id = x.gt.ai.Id,
@@ -81,55 +80,11 @@ namespace Spectra.Controllers
                 return Enumerable.Empty<ProductDisplay>();
             }
         }
-        //[HttpGet]
-        //[Route("ProductHome")]
-        //[AllowAnonymous]
-        //public IEnumerable<Product> GetProductsLaster()
-        //{
-        //    string pattern = "[ ,+(){}.*+?^$|]";
-        //    Regex rgx = new Regex(pattern);
-        //    var data = _context.Products
-        // .Join(_context.Category, ai => ai.CategoryId,
-        //       al => al.Id, (ai, al) => new { ai, al }).Join(_context.Gift, gt => gt.ai.GiftId,
-        //      pr => pr.Id, (gt, pr) => new { gt, pr }).Select(x => new ProductDisplay
-        //      {
-        //          Id = x.gt.ai.Id,
-        //          Code = x.gt.ai.Code,
-        //          Name = x.gt.ai.Name,
-        //          Description = x.gt.ai.Description,
-        //          Instruct = x.gt.ai.Instruct,
-        //          Price = x.gt.ai.Price,
-        //          SalePrice = x.gt.ai.SalePrice,
-        //          WarrantyMonth = x.gt.ai.WarrantyMonth,
-        //          TitleDescription = x.gt.ai.TitleDescription,
-        //          TitleSeo = x.gt.ai.TitleSeo,
-        //          MetaKeyWords = x.gt.ai.MetaKeyWords,
-        //          MetaDescription = x.gt.ai.MetaDescription,
-        //          Images = x.gt.ai.Images,
-        //          CategoryId = x.gt.ai.CategoryId,
-        //          Option = x.gt.ai.Option,
-        //          ScheduleStatus = x.gt.ai.ScheduleStatus,
-        //          GiftId = x.gt.ai.GiftId,
-        //          JobId = x.gt.ai.JobId,
-        //          Status = x.gt.ai.Status,
-        //          Information = x.gt.ai.Information,
-        //          Start = x.gt.ai.Start,
-        //          Ends = x.gt.ai.Ends,
-        //          CreatedDate = x.gt.ai.CreatedDate,
-        //          ModifiedDate = x.gt.ai.ModifiedDate,
-        //          CategoryName = x.gt.al.Name,
-        //          GiftName = x.pr.Name,
-        //          GiftPrice = x.pr.Price,
-        //          Giaphantram = 100 - ((x.gt.ai.SalePrice * 100) / x.gt.ai.Price),
-        //          LinkName = rgx.Replace(x.gt.ai.Name, "-").ToLower()
 
-        //      }).OrderBy(x => x.Code).ToList();
-        //    return data;
-        //}
 
         [HttpPost]
         [Route("ProductHangfire")]
-        [BinaryAuthorize("Product", ActionType.Sua)]
+        //[BinaryAuthorize("Product", ActionType.Sua)]
         public async Task<IActionResult> ProductHangfire([FromBody] Product product)
         {
             if (!ModelState.IsValid)
@@ -179,7 +134,7 @@ namespace Spectra.Controllers
 
         [HttpPost]
         [Route("ProductHangfireCancel")]
-        [BinaryAuthorize("Product", ActionType.Sua)]
+        //[BinaryAuthorize("Product", ActionType.Sua)]
         public IActionResult ProductHangfireCancel([FromBody] Product product)
         {
             if (!ModelState.IsValid)
@@ -721,6 +676,49 @@ namespace Spectra.Controllers
             }
         }
 
+        //lấy biến thể trong add order
+        [HttpGet("productaddorder/{id}")]
+        [AllowAnonymous]
+        public async Task<IActionResult> GetProductVariants(int id)
+        {
+            try
+            {
+                var variants = await _context.ProductVariants
+                    .Where(v => v.ProductId == id && v.Status == true) // Chỉ lấy biến thể đang hoạt động
+                    .Include(v => v.ProductVariantAttributes)
+                        .ThenInclude(va => va.ValueAttribute)
+                            .ThenInclude(a => a.Attribute)
+                    .AsNoTracking()
+                    .Select(v => new VariantDto
+                    {
+                        VariantId = v.Id,
+                        Price = v.Price,
+                        SalePrice = v.SalePrice,
+                        Status = v.Status,
+                        CreatedDate = v.CreatedDate,
+                        ModifiedDate = v.ModifiedDate,
+                        JobId = v.JobId,
+                        Attributes = v.ProductVariantAttributes
+                            .Select(va => new AttributeDto
+                            {
+                                AttributeName = va.ValueAttribute.Attribute.Name,
+                                ValueName = va.ValueAttribute.Name
+                            }).ToList()
+                    })
+                    .ToListAsync();
+
+                if (variants == null || !variants.Any())
+                    return NotFound("Không tìm thấy biến thể nào cho sản phẩm này.");
+
+                return Ok(variants);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Lỗi khi lấy thông tin biến thể sản phẩm: {ex.Message}");
+                return StatusCode(500, "Đã xảy ra lỗi khi xử lý yêu cầu.");
+            }
+        }
+
         // GET: api/Product/5
         [HttpGet("{id}")]
         [AllowAnonymous]
@@ -952,7 +950,7 @@ namespace Spectra.Controllers
         // PUT: api/Product/5
         [HttpPost]
         [Route("PutProduct")]
-        [BinaryAuthorize("Product", ActionType.Sua)]
+        //[BinaryAuthorize("Product", ActionType.Sua)]
         public async Task<IActionResult> PutProduct([FromBody] Product product)
         {
             if (!ModelState.IsValid)
@@ -979,7 +977,7 @@ namespace Spectra.Controllers
 
         // POST: api/Product
         [HttpPost]
-        [BinaryAuthorize("Product", ActionType.Them)]
+        //[BinaryAuthorize("Product", ActionType.Them)]
         public async Task<IActionResult> PostProduct([FromBody] Product product)
         {
             if (!ModelState.IsValid)
@@ -997,7 +995,7 @@ namespace Spectra.Controllers
 
         // DELETE: api/Product/5
         [HttpDelete("{id}")]
-        [BinaryAuthorize("Product", ActionType.Xoa)]
+        //[BinaryAuthorize("Product", ActionType.Xoa)]
         public async Task<IActionResult> DeleteProduct([FromRoute] int? id)
         {
             if (!ModelState.IsValid)

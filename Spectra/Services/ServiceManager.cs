@@ -20,6 +20,7 @@ namespace Spectra.Services
             Product p = (from x in _context.Products
                           where x.Id == product.Id
                           select x).First();
+            p.ScheduleStatus = true;
             p.SalePrice = product.SalePrice;
             p.GiftId = product.GiftId;
             p.Start = product.Start;

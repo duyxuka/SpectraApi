@@ -30,9 +30,7 @@ namespace Spectra.Models
         public string PaymentMethod { get; set; }
         public int TotalQuantity { get; set; }
         public int TotalAmount { get; set; }
-        [DefaultValue(false)]
         public byte Status { get; set; }
-        [DefaultValue(false)]
         public byte Website { get; set; }
         public DateTime CreatedDate { get; set; }
         public DateTime ModifiedDate { get; set; }

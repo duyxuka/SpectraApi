@@ -37,7 +37,7 @@ namespace Spectra.Controllers
 
         // GET: api/AccountAdmin
         [HttpGet]
-        [BinaryAuthorize("Admin", ActionType.Xem)]
+        //[BinaryAuthorize("Admin", ActionType.Xem)]
         public async Task<IEnumerable<AdminDTO>> GetAccountAdmins()
         {
             var accounts = await (from ac in _context.AccountAdmins
@@ -152,7 +152,7 @@ namespace Spectra.Controllers
 
         // GET: api/AccountAdmin/5
         [HttpGet("{id}")]
-        [BinaryAuthorize("Admin", ActionType.Xem)]
+        //[BinaryAuthorize("Admin", ActionType.Xem)]
         public async Task<IActionResult> GetAccountAdmin([FromRoute] int? id)
         {
             if (!ModelState.IsValid)
@@ -278,28 +278,49 @@ namespace Spectra.Controllers
 
         [HttpPost]
         [Route("PutAccountAdmin")]
-        [BinaryAuthorize("Admin", ActionType.Sua)]
+        //[BinaryAuthorize("Admin", ActionType.Sua)]
         public async Task<IActionResult> PutAccountAdmin([FromBody] AccountAdmin accountAdmin)
         {
             if (!ModelState.IsValid)
             {
-                return BadRequest(ModelState);
+                var errors = ModelState.Values.SelectMany(v => v.Errors).Select(e => e.ErrorMessage);
+                Console.WriteLine("ModelState Errors: " + string.Join(", ", errors));
+                return BadRequest(new { Message = "Dữ liệu không hợp lệ", Errors = errors });
             }
 
             var existingAccount = await _context.AccountAdmins.FindAsync(accountAdmin.Id);
             if (existingAccount == null)
             {
-                return NotFound();
+                return NotFound(new { Message = "Tài khoản không tồn tại." });
             }
 
-            // Chỉ cập nhật nếu có mật khẩu mới
-            if (!string.IsNullOrEmpty(accountAdmin.Password))
+            // Kiểm tra trùng lặp Code hoặc Email (ngoại trừ chính tài khoản đang cập nhật)
+            if (_context.AccountAdmins.Any(a => a.Code == accountAdmin.Code && a.Id != accountAdmin.Id))
             {
-                PasswordHelper.CreatePasswordHash(accountAdmin.Password, out var passwordHash, out var passwordSalt);
-                existingAccount.PasswordHash = passwordHash;
-                existingAccount.PasswordSalt = passwordSalt;
+                return BadRequest(new { Message = "Mã tài khoản đã tồn tại." });
+            }
+            if (_context.AccountAdmins.Any(a => a.Email == accountAdmin.Email && a.Id != accountAdmin.Id))
+            {
+                return BadRequest(new { Message = "Email đã tồn tại." });
             }
 
+            // Cập nhật mật khẩu nếu có
+            if (!string.IsNullOrEmpty(accountAdmin.Password) && accountAdmin.Password != "null")
+            {
+                try
+                {
+                    PasswordHelper.CreatePasswordHash(accountAdmin.Password, out var passwordHash, out var passwordSalt);
+                    existingAccount.PasswordHash = passwordHash;
+                    existingAccount.PasswordSalt = passwordSalt;
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine("Password Hashing Error: " + ex.Message);
+                    return StatusCode(500, new { Message = "Lỗi khi mã hóa mật khẩu." });
+                }
+            }
+
+            existingAccount.Code = accountAdmin.Code;
             existingAccount.Name = accountAdmin.Name;
             existingAccount.Email = accountAdmin.Email;
             existingAccount.Status = accountAdmin.Status;
@@ -313,9 +334,15 @@ namespace Spectra.Controllers
             {
                 if (!_context.AccountAdmins.Any(e => e.Id == accountAdmin.Id))
                 {
-                    return NotFound();
+                    return NotFound(new { Message = "Tài khoản không tồn tại." });
                 }
-                throw;
+                Console.WriteLine("Concurrency Error");
+                return StatusCode(500, new { Message = "Lỗi đồng bộ dữ liệu." });
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine("Database Error: " + ex.Message);
+                return StatusCode(500, new { Message = "Lỗi khi lưu dữ liệu: " + ex.Message });
             }
 
             return NoContent();
@@ -367,7 +394,7 @@ namespace Spectra.Controllers
 
         // DELETE: api/AccountAdmin/5
         [HttpDelete("{id}")]
-        [BinaryAuthorize("Admin", ActionType.Xoa)]
+        //[BinaryAuthorize("Admin", ActionType.Xoa)]
         public async Task<IActionResult> DeleteAccountAdmin([FromRoute] int? id)
         {
             if (!ModelState.IsValid)

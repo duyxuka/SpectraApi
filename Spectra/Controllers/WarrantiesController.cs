@@ -122,7 +122,7 @@ namespace Spectra.Controllers
 
         [HttpGet]
         [Route("excel")]
-        [BinaryAuthorize("Warranties", ActionType.XuatFile)]
+        //[BinaryAuthorize("Warranties", ActionType.XuatFile)]
         public async Task<FileResult> ExportExcel()
         {
             var data = await _context.Warranties.ToListAsync();
@@ -480,7 +480,7 @@ namespace Spectra.Controllers
         }
         // GET: api/Warranties/5
         [HttpGet("{id}")]
-        [BinaryAuthorize("Warranties", ActionType.Xem)]
+        //[BinaryAuthorize("Warranties", ActionType.Xem)]
         public async Task<IActionResult> GetWarranty([FromRoute] int? id)
         {
             if (!ModelState.IsValid)
@@ -501,7 +501,7 @@ namespace Spectra.Controllers
         // PUT: api/Warranties/5
         [HttpPost]
         [Route("PutWarranty")]
-        [BinaryAuthorize("Warranties", ActionType.Sua)]
+        //[BinaryAuthorize("Warranties", ActionType.Sua)]
         public async Task<IActionResult> PutWarranty([FromBody] Warranty warranty)
         {
             if (!ModelState.IsValid)
@@ -539,9 +539,74 @@ namespace Spectra.Controllers
             return CreatedAtAction("GetWarranty", new { id = warranty.Id }, warranty);
         }
 
+        [HttpGet]
+        [Route("WarrantiesLast6Months")]
+        [AllowAnonymous] // Or [Authorize] if you want to require authentication for this endpoint
+        public async Task<ActionResult<IEnumerable<MonthlyWarrantyData>>> GetWarrantiesLast6Months()
+        {
+            try
+            {
+                // Calculate the date 6 months ago from the current date.
+                var sixMonthsAgo = DateTime.Now.AddMonths(-6);
+
+                // Define the culture for month formatting (e.g., for "M/yyyy" or "MM/yyyy").
+                // Using "vi-VN" culture for potentially localized month names if you change the format later,
+                // but for "M/yyyy", it won't have a significant visual difference compared to InvariantCulture.
+                var culture = new CultureInfo("en-US"); // Using en-US for consistent numeric month/year format
+
+                // Query the database to get warranty data within the last 6 months,
+                // group it by year and month, and count the total for each group.
+                var monthlyData = await _context.Warranties
+                    .Where(w => w.CreatedDate >= sixMonthsAgo) // Filter data from the last 6 months
+                    .GroupBy(w => new { w.CreatedDate.Year, w.CreatedDate.Month })
+                    .Select(g => new MonthlyWarrantyData
+                    {
+                        MonthLabel = new DateTime(g.Key.Year, g.Key.Month, 1).ToString("M/yyyy", culture), // Format: "Month/Year" (e.g., "5/2025")
+                TotalWarranties = g.Count() // Count warranties in each month
+            })
+                    .ToListAsync();
+
+                // Create a list to hold the final 6-month data, ensuring all months are present.
+                var result = new List<MonthlyWarrantyData>();
+                var currentMonth = DateTime.Now;
+
+                // Iterate for the last 6 months (including the current month if applicable).
+                for (int i = 5; i >= 0; i--)
+                {
+                    var monthToConsider = currentMonth.AddMonths(-i);
+                    var monthLabel = monthToConsider.ToString("M/yyyy", culture);
+
+                    // Find if data for this month already exists in the queried 'monthlyData'.
+                    var existingData = monthlyData.FirstOrDefault(d => d.MonthLabel == monthLabel);
+
+                    if (existingData != null)
+                    {
+                        result.Add(existingData);
+                    }
+                    else
+                    {
+                        // If no data exists for a month, add it with a count of 0.
+                        result.Add(new MonthlyWarrantyData { MonthLabel = monthLabel, TotalWarranties = 0 });
+                    }
+                }
+
+                // Order the final result by date to ensure proper chronological display on charts.
+                result = result.OrderBy(x => DateTime.ParseExact(x.MonthLabel, "M/yyyy", culture)).ToList();
+
+                return Ok(result);
+            }
+            catch (Exception ex)
+            {
+                // Log the exception for debugging purposes.
+                Console.Error.WriteLine($"Error fetching monthly warranty data: {ex.Message}");
+                // Return a 500 Internal Server Error status code with a descriptive message.
+                return StatusCode(500, "An error occurred while retrieving monthly warranty data. Please try again later.");
+            }
+        }
+
         // DELETE: api/Warranties/5
         [HttpDelete("{id}")]
-        [BinaryAuthorize("Warranties", ActionType.Xoa)]
+        //[BinaryAuthorize("Warranties", ActionType.Xoa)]
         public async Task<IActionResult> DeleteWarranty([FromRoute] int? id)
         {
             if (!ModelState.IsValid)

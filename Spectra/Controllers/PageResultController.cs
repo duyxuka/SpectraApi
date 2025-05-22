@@ -1039,7 +1039,7 @@ namespace Spectra.Controllers
 
         [HttpGet]
         [Route("ServiceDetail")]
-        [BinaryAuthorize("ServiceDetail", ActionType.Xem)]
+        //[BinaryAuthorize("ServiceDetail", ActionType.Xem)]
         public IActionResult ServiceDetail(int? page, int pagesize = 5)
         {
             string pattern = "[ ,+(){}.*+?^$|]";

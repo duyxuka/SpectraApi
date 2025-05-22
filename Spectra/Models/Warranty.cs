@@ -33,4 +33,9 @@ namespace Spectra.Models
         public string LinkName { get; set; }
         public string LocationName { get; set; }
     }
+    public class MonthlyWarrantyData
+    {
+        public string MonthLabel { get; set; } // Ví dụ: "Tháng 1/2024"
+        public int TotalWarranties { get; set; }
+    }
 }

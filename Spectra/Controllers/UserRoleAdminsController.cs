@@ -12,7 +12,7 @@ namespace Spectra.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
-    [Authorize]
+    //[Authorize]
     public class UserRoleAdminsController : ControllerBase
     {
         private readonly AppDBContext _context;

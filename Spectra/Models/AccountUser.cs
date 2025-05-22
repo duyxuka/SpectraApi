@@ -18,8 +18,6 @@ namespace Spectra.Models
         [MaxLength(250, ErrorMessage = "Max of length is 30 characters")]
         [MinLength(2, ErrorMessage = "This field can't least 2 characters")]
         public string Name { get; set; }
-        [DefaultValue(true)]
-        public bool? Gender { get; set; }
         [Required(ErrorMessage = "This field is REQUIRED")]
         public string Email { get; set; }
         [Required(ErrorMessage = "Number phone is REQUIRED")]

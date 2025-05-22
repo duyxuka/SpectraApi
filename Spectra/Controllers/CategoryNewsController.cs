@@ -97,7 +97,7 @@ namespace Spectra.Controllers
         // PUT: api/CategoryNews/5
         [HttpPost]
         [Route("PutCategoryNews")]
-        [BinaryAuthorize("CategoryNews", ActionType.Sua)]
+        //[BinaryAuthorize("CategoryNews", ActionType.Sua)]
         public async Task<IActionResult> PutCategoryNews([FromBody] CategoryNew categoryNew)
         {
             if (!ModelState.IsValid)
@@ -122,7 +122,7 @@ namespace Spectra.Controllers
 
         // POST: api/CategoryNews
         [HttpPost]
-        [BinaryAuthorize("CategoryNews", ActionType.Them)]
+        //[BinaryAuthorize("CategoryNews", ActionType.Them)]
         public async Task<IActionResult> PostCategoryNew([FromBody] CategoryNew categoryNew)
         {
             if (!ModelState.IsValid)
@@ -138,7 +138,7 @@ namespace Spectra.Controllers
 
         // DELETE: api/CategoryNews/5
         [HttpDelete("{id}")]
-        [BinaryAuthorize("CategoryNews", ActionType.Xoa)]
+        //[BinaryAuthorize("CategoryNews", ActionType.Xoa)]
         public async Task<IActionResult> DeleteCategoryNew([FromRoute] int? id)
         {
             if (!ModelState.IsValid)

@@ -41,7 +41,7 @@ namespace Spectra.Controllers
 
         // GET: api/AccountUser
         [HttpGet]
-        [BinaryAuthorize("User", ActionType.Xem)]
+        //[BinaryAuthorize("User", ActionType.Xem)]
         public IEnumerable<AccountUser> GetAccountUsers()
         {
             return _context.AccountUsers
@@ -67,6 +67,89 @@ namespace Spectra.Controllers
                 .ToList();
         }
 
+        [HttpGet]
+        [Route("LoyalCustomers")]
+        [AllowAnonymous]
+        public async Task<IActionResult> GetLoyalCustomers(int minOrders = 2, int months = 6)
+        {
+            // Kiểm tra tính hợp lệ của Model State
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(ModelState);
+            }
+
+            try
+            {
+                // Tính toán ngày bắt đầu khoảng thời gian xét duyệt
+                var startDate = DateTime.Now.AddMonths(-months);
+
+                // Bước 1: Lấy các đơn hàng trong khoảng thời gian đã cho
+                // và nhóm theo AccountUserId để đếm số lượng đơn hàng và ngày đặt hàng cuối cùng.
+                // AsNoTracking() được sử dụng để tối ưu hiệu suất cho truy vấn chỉ đọc.
+                var customerOrderStats = await _context.Order
+                    .AsNoTracking()
+                    .Where(o => o.CreatedDate >= startDate) // Lọc đơn hàng theo thời gian
+                    .GroupBy(o => o.AccountUserId)
+                    .Select(g => new
+                    {
+                        AccountUserId = g.Key,
+                        OrderCount = g.Count(), // Đếm số lượng đơn hàng của mỗi khách hàng
+                        LastOrderDate = g.Max(o => o.CreatedDate) // Lấy ngày đặt hàng cuối cùng
+                    })
+                    .Where(g => g.OrderCount >= minOrders) // Lọc những khách hàng có số đơn hàng tối thiểu
+                    .ToListAsync(); // Thực thi truy vấn đến đây để lấy dữ liệu thống kê khách hàng
+
+                // Nếu không có khách hàng nào đủ điều kiện, trả về kết quả rỗng sớm
+                if (!customerOrderStats.Any())
+                {
+                    return Ok(new { LoyalCustomerCount = 0, Customers = new List<object>() });
+                }
+
+                // Bước 2: Lấy thông tin chi tiết của các AccountUser dựa trên AccountUserId đã tìm được
+                // Điều này giúp tránh việc join toàn bộ bảng AccountUsers nếu có quá nhiều user.
+                var loyalCustomerIds = customerOrderStats.Select(s => s.AccountUserId).ToList();
+                var accountUsers = await _context.AccountUsers
+                    .AsNoTracking()
+                    .Where(u => loyalCustomerIds.Contains(u.Id))
+                    .Select(u => new
+                    {
+                        u.Id,
+                        u.Email,
+                        // Giả sử tên khách hàng được lưu ở trường FullName, PhoneNumber ở trường Phone
+                        // Bạn cần thay đổi tên trường cho phù hợp với cấu trúc DB của bạn
+                        FullName = u.Name, // Tên đầy đủ của khách hàng
+                        PhoneNumber = u.Phone // Số điện thoại của khách hàng
+            })
+                    .ToListAsync();
+
+                // Bước 3: Kết hợp thông tin thống kê đơn hàng với thông tin chi tiết khách hàng
+                var loyalCustomers = customerOrderStats
+                    .Join(accountUsers,
+                        stats => stats.AccountUserId,
+                        user => user.Id,
+                        (stats, user) => new
+                        {
+                            AccountUserId = stats.AccountUserId,
+                            Email = user.Email,
+                            FullName = user.FullName,      // Thêm tên khách hàng
+                            PhoneNumber = user.PhoneNumber, // Thêm số điện thoại
+                            OrderCount = stats.OrderCount,
+                            LastOrderDate = stats.LastOrderDate
+                        })
+                    .OrderByDescending(c => c.OrderCount)
+                    .Take(5)// Sắp xếp lại theo số lượng đơn hàng
+                    .ToList(); // Chuyển kết quả cuối cùng thành List
+
+                // Trả về số lượng và danh sách khách hàng thân thiết
+                return Ok(new { LoyalCustomerCount = loyalCustomers.Count, Customers = loyalCustomers });
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Lỗi khi lấy dữ liệu khách hàng thân thiết: {ex.Message}");
+                // Log lỗi chi tiết hơn nếu có thể
+                return StatusCode(500, new { message = "Đã xảy ra lỗi khi xử lý yêu cầu khách hàng thân thiết.", error = ex.Message, innerError = ex.InnerException?.Message });
+            }
+        }
 
         [HttpGet]
         [Route("TrashAccountUsers")]
@@ -78,7 +161,7 @@ namespace Spectra.Controllers
 
         // GET: api/AccountUser/5
         [HttpGet("{id}")]
-        [BinaryAuthorize("User", ActionType.Xem)]
+        //[BinaryAuthorize("User", ActionType.Xem)]
         public async Task<IActionResult> GetAccountUser([FromRoute] int? id)
         {
             if (!ModelState.IsValid)
@@ -199,7 +282,6 @@ namespace Spectra.Controllers
                     Name = accountUser.Name,
                     Email = accountUser.Email,
                     Phone = accountUser.Phone,
-                    Gender = accountUser.Gender,
                     Status = true,
                     CreatedDate = DateTime.Now,
                     ModifiedDate = DateTime.Now,
@@ -220,11 +302,17 @@ namespace Spectra.Controllers
                 });
                 await _context.SaveChangesAsync();
 
+                // Lấy danh sách module
                 var modules = await _context.Modules.ToListAsync();
                 var permissionList = new List<Permissions>();
 
+                // Lấy các quyền hiện có của vai trò
+                var existingPermissions = await _context.Permissions
+                    .Where(p => p.RolesId == role.Id)
+                    .ToListAsync();
+
                 var orderModule = modules.FirstOrDefault(m => m.Name == "Order");
-                if (orderModule != null)
+                if (orderModule != null && !existingPermissions.Any(p => p.ModulesId == orderModule.Id))
                 {
                     permissionList.Add(new Permissions
                     {
@@ -235,7 +323,7 @@ namespace Spectra.Controllers
                 }
 
                 var userModule = modules.FirstOrDefault(m => m.Name == "User");
-                if (userModule != null)
+                if (userModule != null && !existingPermissions.Any(p => p.ModulesId == userModule.Id))
                 {
                     permissionList.Add(new Permissions
                     {
@@ -245,8 +333,11 @@ namespace Spectra.Controllers
                     });
                 }
 
-                _context.Permissions.AddRange(permissionList);
-                await _context.SaveChangesAsync();
+                if (permissionList.Any())
+                {
+                    _context.Permissions.AddRange(permissionList);
+                    await _context.SaveChangesAsync();
+                }
 
                 return CreatedAtAction("GetAccountUser", new { id = user.Id }, accountUser);
             }
@@ -260,7 +351,7 @@ namespace Spectra.Controllers
 
         [HttpGet]
         [Route("excel")]
-        [BinaryAuthorize("User", ActionType.XuatFile)]
+        //[BinaryAuthorize("User", ActionType.XuatFile)]
         public async Task<FileResult> ExportExcel()
         {
             var data = await _context.AccountUsers.ToListAsync();
@@ -300,7 +391,7 @@ namespace Spectra.Controllers
         }
         // DELETE: api/AccountUser/5
         [HttpDelete("{id}")]
-        [BinaryAuthorize("User", ActionType.Xoa)]
+        //[BinaryAuthorize("User", ActionType.Xoa)]
         public async Task<IActionResult> DeleteAccountUser([FromRoute] int? id)
         {
             if (!ModelState.IsValid)
@@ -410,7 +501,7 @@ namespace Spectra.Controllers
         // POST: api/AccountUsers/ChangePassword/1
         [HttpPost]
         [Route("ChangePassword/{id}")]
-        [BinaryAuthorize("User", ActionType.Sua)]
+        //[BinaryAuthorize("User", ActionType.Sua)]
         public async Task<IActionResult> ChangePassword([FromRoute] int? id, [FromBody] ChangePasswordDto model)
         {
             var userIdFromToken = User.FindFirst("UserId")?.Value;

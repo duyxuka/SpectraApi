@@ -57,6 +57,66 @@ namespace Spectra.Controllers
 
             return seriproduct;
         }
+
+        [HttpGet]
+        [Route("ExportedProductsLast6Months")]
+        [AllowAnonymous] // Cho phép truy cập mà không cần xác thực
+        public async Task<IActionResult> GetExportedProductsLast6Months()
+        {
+            try
+            {
+                var now = DateTime.Now;
+                // Lấy ngày đầu tiên của tháng hiện tại trừ đi 5 tháng để có điểm bắt đầu 6 tháng trước
+                var sixMonthsAgo = new DateTime(now.Year, now.Month, 1).AddMonths(-5);
+
+                // Truy vấn các SeriProduct đã xuất kho (Status == true) trong 6 tháng qua
+                // và nhóm theo tháng, năm của DealerSaleDate
+                var monthlyExportedProducts = await _context.SeriProducts
+                    .AsNoTracking()
+                    .Where(sp => sp.Status == true && sp.DealerSaleDate.HasValue && sp.DealerSaleDate.Value >= sixMonthsAgo && sp.DealerSaleDate.Value <= now)
+                    .GroupBy(sp => new { sp.DealerSaleDate.Value.Year, sp.DealerSaleDate.Value.Month })
+                    .Select(g => new
+                    {
+                        Year = g.Key.Year,
+                        Month = g.Key.Month,
+                        TotalExported = g.Count() // Đếm số lượng sản phẩm đã xuất kho trong nhóm này
+                    })
+                    .OrderBy(g => g.Year)
+                    .ThenBy(g => g.Month)
+                    .ToListAsync();
+
+                // Tạo danh sách kết quả cho 6 tháng, bao gồm cả những tháng không có sản phẩm xuất kho
+                var result = new List<object>();
+                for (int i = 0; i < 6; i++)
+                {
+                    var currentMonth = new DateTime(now.Year, now.Month, 1).AddMonths(-i);
+                    var monthData = monthlyExportedProducts.FirstOrDefault(m => m.Year == currentMonth.Year && m.Month == currentMonth.Month);
+
+                    result.Add(new
+                    {
+                        Month = currentMonth.Month,
+                        Year = currentMonth.Year,
+                        MonthLabel = $"{currentMonth.Month}/{currentMonth.Year}",
+                        TotalExported = monthData?.TotalExported ?? 0 // Nếu không có dữ liệu, coi như 0 sản phẩm xuất kho
+                    });
+                }
+
+                // Sắp xếp lại danh sách theo thứ tự thời gian tăng dần
+                result = result.OrderBy(x => ((dynamic)x).Year).ThenBy(x => ((dynamic)x).Month).ToList();
+
+                return Ok(result);
+            }
+            catch (Exception ex)
+            {
+                // Ghi log lỗi chi tiết để dễ dàng gỡ lỗi
+                Console.WriteLine($"Error retrieving exported products data: {ex.Message}");
+                Console.WriteLine($"Inner Exception: {ex.InnerException?.Message}");
+                Console.WriteLine($"Stack Trace: {ex.StackTrace}");
+                return StatusCode(500, new { message = "An error occurred while processing the request for exported products data.", error = ex.Message, innerError = ex.InnerException?.Message });
+            }
+        }
+
+
         [HttpGet]
         [Route("SeriProductPage")]
         [AllowAnonymous]
@@ -183,7 +243,7 @@ namespace Spectra.Controllers
         // PUT: api/SeriProduct/5
         [HttpPost]
         [Route("PutSeriProduct")]
-        [BinaryAuthorize("SeriProduct", ActionType.Sua)]
+        //[BinaryAuthorize("SeriProduct", ActionType.Sua)]
         public async Task<IActionResult> PutSeriProduct([FromBody] SeriProduct seriProduct)
         {
             if (!ModelState.IsValid)
@@ -220,7 +280,7 @@ namespace Spectra.Controllers
 
         // POST: api/SeriProduct
         [HttpPost]
-        [BinaryAuthorize("SeriProduct", ActionType.Them)]
+        //[BinaryAuthorize("SeriProduct", ActionType.Them)]
         public async Task<IActionResult> PostSeriProduct([FromBody] SeriProduct seriProduct)
         {
             if (!ModelState.IsValid)
@@ -237,7 +297,7 @@ namespace Spectra.Controllers
 
         // DELETE: api/SeriProduct/5
         [HttpDelete("{id}")]
-        [BinaryAuthorize("SeriProduct", ActionType.Xoa)]
+        //[BinaryAuthorize("SeriProduct", ActionType.Xoa)]
         public async Task<IActionResult> DeleteSeriProduct([FromRoute] int? id)
         {
             if (!ModelState.IsValid)

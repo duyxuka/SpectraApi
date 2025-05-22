@@ -16,7 +16,7 @@ namespace Spectra.Controllers
     [EnableCors("AddCors")]
     [Route("api/[controller]")]
     [ApiController]
-    [Authorize]
+    //[Authorize]
     public class VoucherController : ControllerBase
     {
         private readonly AppDBContext _context;
@@ -167,18 +167,6 @@ namespace Spectra.Controllers
                 var jobId = BackgroundJob.Schedule<IServiceVoucher>(
                     x => x.UpdateDatabase(voucher),
                     TimeSpan.FromSeconds(secondsUntilStart));
-
-                // Schedule the delay job as a continuation of the first job
-                //var delayJobId = BackgroundJob.ContinueJobWith(
-                //    jobId,
-                //    () => Task.Delay(TimeSpan.FromSeconds(secondsBetweenStartAndEnd)),
-                //    JobContinuationOptions.OnlyOnSucceededState);
-
-                // Schedule the second job as a continuation of the delay job
-                //var jobId1 = BackgroundJob.ContinueJobWith<IServiceVoucher>(
-                //    delayJobId,
-                //    x => x.UpdateDatabaseAgain(voucher),
-                //    JobContinuationOptions.OnlyOnSucceededState);
                 var jobId1 = BackgroundJob.Schedule<IServiceVoucher>(
                     x => x.UpdateDatabaseAgain(voucher),
                     TimeSpan.FromSeconds(secondsUntilStart + secondsBetweenStartAndEnd));

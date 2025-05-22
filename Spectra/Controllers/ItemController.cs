@@ -12,7 +12,7 @@ using Spectra.Models;
 using Spectra.Services;
 
 namespace Spectra.Controllers
-{
+{ 
     [EnableCors("AddCors")]
     [Route("api/[controller]")]
     [ApiController]
@@ -20,10 +20,8 @@ namespace Spectra.Controllers
     public class ItemController : ControllerBase
     {
         private readonly AppDBContext _context;
-        private readonly IServiceItem _serviceItem;
-        public ItemController(AppDBContext context, IServiceItem serviceItem)
-        {
-            _serviceItem = serviceItem;
+        public ItemController(AppDBContext context)
+        { 
             _context = context;
         }
 
@@ -56,84 +54,7 @@ namespace Spectra.Controllers
             }).ToList();
             return data;
         }
-
-        [HttpPost]
-        [Route("ItemHangfire")]
-        public async Task<IActionResult> ItemHangfire([FromBody] Item item, [FromQuery] DateTime start, [FromQuery] DateTime end)
-        {
-            if (!ModelState.IsValid)
-            {
-                return BadRequest(ModelState);
-            }
-
-            try
-            {
-                DateTime endDateTime = Convert.ToDateTime(end);
-                DateTime startDateTime = Convert.ToDateTime(start);
-                DateTime currentDateTime = DateTime.Now;
-
-                TimeSpan timeUntilStart = startDateTime.Subtract(currentDateTime);
-                TimeSpan durationBetweenStartAndEnd = endDateTime.Subtract(startDateTime);
-
-                double secondsUntilStart = timeUntilStart.TotalSeconds;
-                double secondsBetweenStartAndEnd = durationBetweenStartAndEnd.TotalSeconds;
-
-                if (secondsUntilStart < 0 || secondsBetweenStartAndEnd < 0)
-                {
-                    return BadRequest("Invalid time range.");
-                }
-                // Schedule the first job
-                var jobId = BackgroundJob.Schedule<IServiceItem>(
-                    x => x.UpdateDatabase(item),
-                    TimeSpan.FromSeconds(secondsUntilStart));
-                var jobId1 = BackgroundJob.Schedule<IServiceItem>(
-                    x => x.UpdateDatabaseAgain(item),
-                    TimeSpan.FromSeconds(secondsUntilStart + secondsBetweenStartAndEnd));
-                // Update the database with the jobId1
-                await _serviceItem.UpdateDatabaseJobIdAsync(item, jobId1);
-
-                return Ok(item);
-            }
-            catch (DbUpdateConcurrencyException)
-            {
-                ModelState.AddModelError("ConcurrencyError", "A concurrency error occurred while updating the database.");
-                return BadRequest(ModelState);
-            }
-            catch (Exception ex)
-            {
-                // Handle other exceptions
-                return BadRequest(ex.Message);
-            }
-        }
-
-        [HttpPost]
-        [Route("ItemHangfireCancel")]
-        public IActionResult ItemHangfireCancel([FromBody] Item item)
-        {
-            if (!ModelState.IsValid)
-            {
-                return BadRequest(ModelState);
-            }
-            string[] jobss = item.JobId.Split('-');
-
-            foreach (string job in jobss)
-            {
-                BackgroundJob.Delete(job);
-            }
-
-            BackgroundJob.Enqueue<IServiceItem>(x => x.UpdateDatabaseAgain(item));
-
-            try
-            {
-                return Ok(item);
-            }
-            catch (DbUpdateConcurrencyException)
-            {
-
-            }
-            return NoContent();
-
-        }
+      
 
         [HttpGet]
         [Route("getcolor/{id}")]

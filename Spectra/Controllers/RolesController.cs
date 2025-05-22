@@ -13,7 +13,7 @@ namespace Spectra.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
-    [Authorize]
+    //[Authorize]
     public class RolesController : ControllerBase
     {
         private readonly AppDBContext _context;
@@ -25,7 +25,7 @@ namespace Spectra.Controllers
 
         // GET: api/Roles
         [HttpGet]
-        [BinaryAuthorize("Role", ActionType.Xem)]
+        //[BinaryAuthorize("Role", ActionType.Xem)]
         public IEnumerable<Roles> GetRoles()
         {
             return _context.Roles;
@@ -33,7 +33,7 @@ namespace Spectra.Controllers
 
         [HttpGet]
         [Route("GetAdminRoles")]
-        [BinaryAuthorize("Role", ActionType.Xem)]
+        //[BinaryAuthorize("Role", ActionType.Xem)]
         public async Task<IActionResult> GetAdminRoles()
         {
             var adminRoles = await _context.Roles
@@ -46,7 +46,7 @@ namespace Spectra.Controllers
 
         // GET: api/Roles/5
         [HttpGet("{id}")]
-        [BinaryAuthorize("Role", ActionType.Xem)]
+        //[BinaryAuthorize("Role", ActionType.Xem)]
         public async Task<IActionResult> GetRoles([FromRoute] int id)
         {
             if (!ModelState.IsValid)
@@ -66,7 +66,7 @@ namespace Spectra.Controllers
 
         // PUT: api/Roles/5
         [HttpPut("{id}")]
-        [BinaryAuthorize("Role", ActionType.Sua)]
+        //[BinaryAuthorize("Role", ActionType.Sua)]
         public async Task<IActionResult> PutRoles([FromRoute] int id, [FromBody] Roles roles)
         {
             if (!ModelState.IsValid)
@@ -102,7 +102,7 @@ namespace Spectra.Controllers
 
         // POST: api/Roles
         [HttpPost]
-        [BinaryAuthorize("Role", ActionType.Them)]
+       //[BinaryAuthorize("Role", ActionType.Them)]
         public async Task<IActionResult> PostRoles([FromBody] Roles roles)
         {
             if (!ModelState.IsValid)
@@ -118,7 +118,7 @@ namespace Spectra.Controllers
 
         // DELETE: api/Roles/5
         [HttpDelete("{id}")]
-        [BinaryAuthorize("Role", ActionType.Xoa)]
+        //[BinaryAuthorize("Role", ActionType.Xoa)]
         public async Task<IActionResult> DeleteRoles([FromRoute] int id)
         {
             if (!ModelState.IsValid)

@@ -158,7 +158,7 @@ namespace Spectra
             services.AddScoped<IVnPayService, VnPayService>();
             services.AddScoped<IServiceManagercs, ServiceManager>();
             services.AddScoped<IServiceVoucher, ServiceVoucher>();
-            services.AddScoped<IServiceItem, ServiceItem>();
+            services.AddScoped<IServiceProductVariant, ServiceProductVariant>();
             services.AddDbContext<AppDBContext>(options => options.UseSqlServer(Configuration.GetConnectionString("DbConnect")));
             services.AddHangfire((sp, config) =>
             {

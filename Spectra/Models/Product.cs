@@ -93,10 +93,18 @@ namespace Spectra.Models
     public class VariantDto
     {
         public int VariantId { get; set; }
-        public string SKU { get; set; }
+        public int? ProductId { get; set; }
+        public string ProductName { get; set; }
         public float Price { get; set; }
         public float SalePrice { get; set; }
-
+        public bool Status { get; set; }
+        public string SKU { get; set; }
+        public int ValueAttributeId { get; set; }
+        public int? AttributeId { get; set; }
+        public string ValueName { get; set; }
+        public string JobId { get; set; }
+        public DateTime CreatedDate { get; set; }
+        public DateTime ModifiedDate { get; set; }
         public List<AttributeDto> Attributes { get; set; }
     }
 

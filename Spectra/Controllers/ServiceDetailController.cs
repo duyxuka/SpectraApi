@@ -206,7 +206,7 @@ namespace Spectra.Controllers
         // PUT: api/ServiceDetail/5
         [HttpPost]
         [Route("PutServiceDetail")]
-        [BinaryAuthorize("ServiceDetail", ActionType.Sua)]
+        //[BinaryAuthorize("ServiceDetail", ActionType.Sua)]
         public async Task<IActionResult> PutServiceDetail([FromBody] ServiceDetail serviceDetail)
         {
             if (!ModelState.IsValid)
@@ -231,7 +231,7 @@ namespace Spectra.Controllers
 
         // POST: api/ServiceDetail
         [HttpPost]
-        [BinaryAuthorize("ServiceDetail", ActionType.Them)]
+        //[BinaryAuthorize("ServiceDetail", ActionType.Them)]
         public async Task<IActionResult> PostServiceDetail([FromBody] ServiceDetail serviceDetail)
         {
             if (!ModelState.IsValid)
@@ -247,7 +247,7 @@ namespace Spectra.Controllers
 
         // DELETE: api/ServiceDetail/5
         [HttpDelete("{id}")]
-        [BinaryAuthorize("ServiceDetail", ActionType.Xoa)]
+        //[BinaryAuthorize("ServiceDetail", ActionType.Xoa)]
         public async Task<IActionResult> DeleteServiceDetail([FromRoute] int? id)
         {
             if (!ModelState.IsValid)

@@ -31,7 +31,7 @@ namespace Spectra.Controllers
 
         // GET: api/ExperienceDay
         [HttpGet]
-        [BinaryAuthorize("ExperienceDay", ActionType.Xem)]
+        //[BinaryAuthorize("ExperienceDay", ActionType.Xem)]
         public IEnumerable<ExperienceDay> GetExperienceDays()
         {
             return _context.ExperienceDays.Where(x => x.Website == 1).OrderByDescending(x => x.CreateDate);
@@ -39,7 +39,7 @@ namespace Spectra.Controllers
 
         [HttpGet]
         [Route("HCM")]
-        [BinaryAuthorize("ExperienceDay", ActionType.Xem)]
+        //[BinaryAuthorize("ExperienceDay", ActionType.Xem)]
         public IEnumerable<ExperienceDay> GetExperienceDaysHCM()
         {
             return _context.ExperienceDays.Where(x => x.Website == 2).OrderByDescending(x => x.CreateDate);
@@ -47,7 +47,7 @@ namespace Spectra.Controllers
 
         // GET: api/ExperienceDay/5
         [HttpGet("{id}")]
-        [BinaryAuthorize("ExperienceDay", ActionType.Xem)]
+        //[BinaryAuthorize("ExperienceDay", ActionType.Xem)]
         public async Task<IActionResult> GetExperienceDay([FromRoute] int? id)
         {
             if (!ModelState.IsValid)
@@ -67,7 +67,7 @@ namespace Spectra.Controllers
 
         [HttpGet]
         [Route("excel")]
-        [BinaryAuthorize("ExperienceDay", ActionType.XuatFile)]
+        //[BinaryAuthorize("ExperienceDay", ActionType.XuatFile)]
         public async Task<FileResult> ExportExcel(string query = null, DateTime? startDate = null, DateTime? endDate = null)
         {
             // Lấy danh sách ban đầu
@@ -105,7 +105,7 @@ namespace Spectra.Controllers
 
         [HttpGet]
         [Route("excelHCM")]
-        [BinaryAuthorize("ExperienceDay", ActionType.XuatFile)]
+        //[BinaryAuthorize("ExperienceDay", ActionType.XuatFile)]
         public async Task<FileResult> ExportExcelHCM(string query = null, DateTime? startDate = null, DateTime? endDate = null)
         {
             // Lấy danh sách ban đầu
@@ -178,7 +178,7 @@ namespace Spectra.Controllers
 
         // PUT: api/ExperienceDay/5
         [HttpPut("{id}")]
-        [BinaryAuthorize("ExperienceDay", ActionType.Sua)]
+        //[BinaryAuthorize("ExperienceDay", ActionType.Sua)]
         public async Task<IActionResult> PutExperienceDay([FromRoute] int? id, [FromBody] ExperienceDay experienceDay)
         {
             if (!ModelState.IsValid)
@@ -232,7 +232,7 @@ namespace Spectra.Controllers
 
         // DELETE: api/ExperienceDay/5
         [HttpDelete("{id}")]
-        [BinaryAuthorize("ExperienceDay", ActionType.Xoa)]
+        //[BinaryAuthorize("ExperienceDay", ActionType.Xoa)]
         public async Task<IActionResult> DeleteExperienceDay([FromRoute] int? id)
         {
             if (!ModelState.IsValid)

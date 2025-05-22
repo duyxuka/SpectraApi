@@ -31,7 +31,7 @@ namespace Spectra.Controllers
 
         // GET: api/Order
         [HttpGet]
-        [BinaryAuthorize("Order", ActionType.Xem)]
+        //[BinaryAuthorize("Order", ActionType.Xem)]
         public IEnumerable<Order> GetOrder()
         {
             return _context.Order
@@ -40,46 +40,186 @@ namespace Spectra.Controllers
                 .ToList();
         }
 
+        // New Dashboard API
         [HttpGet]
-        [Route("OrderPage")]
+        [Route("Dashboard")]
         [AllowAnonymous]
-        //[BinaryAuthorize("Order", ActionType.Xem)]
-        public IActionResult OrderResult(int? page, int pagesize = 5)
+        public async Task<IActionResult> GetOrderDashboard()
         {
-            string pattern = "[ ,+(){}.*+?^$|]";
-            Regex rgx = new Regex(pattern);
-
             try
             {
-                var countDetails = _context.Order.AsNoTracking().Where(x => x.Website == 2).Count();
-                var currentPage = page ?? 1;
-                using (var context = _context)
-                {
-                    var OrderQuery = context.Order
+                var now = DateTime.Now;
+                var startOfDay = new DateTime(now.Year, now.Month, now.Day);
+                var startOfMonth = new DateTime(now.Year, now.Month, 1);
+                var startOfYear = new DateTime(now.Year, 1, 1);
+
+                // 1. Total Revenue (Today, Month, Year)
+                var revenueToday = await _context.Order
                     .AsNoTracking()
-                    .Where(x => x.Website == 2)
-                    .OrderByDescending(x => x.Id)
-                    .Skip((currentPage - 1) * pagesize)
-                    .Take(pagesize);
+                    .Where(o => o.CreatedDate >= startOfDay && o.Status == 3) // Status 3 = Success
+                    .SumAsync(o => o.TotalAmount);
 
-                    var result = new PageResult<Order>
+                var revenueMonth = await _context.Order
+                    .AsNoTracking()
+                    .Where(o => o.CreatedDate >= startOfMonth && o.Status == 3)
+                    .SumAsync(o => o.TotalAmount);
+
+                var revenueYear = await _context.Order
+                    .AsNoTracking()
+                    .Where(o => o.CreatedDate >= startOfYear && o.Status == 3)
+                    .SumAsync(o => o.TotalAmount);
+
+                // 2. Total Orders Sold
+                var totalOrdersSold = await _context.Order
+                    .AsNoTracking()
+                    .Where(o => o.Status == 3)
+                    .CountAsync();
+
+                // 3. Revenue by Payment Method
+                var paymentMethodRevenue = await _context.Order
+                    .AsNoTracking()
+                    .Where(o => o.Status == 3)
+                    .GroupBy(o => o.PaymentMethod)
+                    .Select(g => new
                     {
-                        Count = countDetails,
-                        PageIndex = currentPage,
-                        PageSize = pagesize,
-                        Items = OrderQuery.ToList()
-                    };
+                        PaymentMethod = g.Key,
+                        TotalRevenue = g.Sum(o => o.TotalAmount)
+                    })
+                    .ToListAsync();
 
-                    return Ok(result);
-                }
+                // 4. Order Status Breakdown
+                var newOrders = await _context.Order
+                    .AsNoTracking()
+                    .Where(o => o.Status == 0) // Assuming 0 = New
+                    .CountAsync();
+
+                var processingOrders = await _context.Order
+                    .AsNoTracking()
+                    .Where(o => o.Status == 1) // Assuming 1 = Processing
+                    .CountAsync();
+
+                var shippingOrders = await _context.Order
+                    .AsNoTracking()
+                    .Where(o => o.Status == 2) // Assuming 2 = Shipping
+                    .CountAsync();
+
+                var completedOrders = await _context.Order
+                    .AsNoTracking()
+                    .Where(o => o.Status == 3) // Assuming 3 = Completed
+                    .CountAsync();
+
+                var cancelledOrders = await _context.Order
+                    .AsNoTracking()
+                    .Where(o => o.Status == 4) // Assuming 4 = Cancelled
+                    .CountAsync();
+
+                var failedOrders = await _context.Order
+                    .AsNoTracking()
+                    .Where(o => o.Status == 5) // Assuming 5 = Return
+                    .CountAsync();
+
+                var returnOrders = await _context.Order
+                    .AsNoTracking()
+                    .Where(o => o.Status == 7) // Assuming 6 = False
+                    .CountAsync();
+
+                // 5. Chart Data (Monthly Revenue for the Current Year)
+                var monthlyRevenue = await _context.Order
+                    .AsNoTracking()
+                    .Where(o => o.CreatedDate >= startOfYear && o.Status == 3)
+                    .GroupBy(o => new { o.CreatedDate.Year, o.CreatedDate.Month })
+                    .Select(g => new
+                    {
+                        Year = g.Key.Year,
+                        Month = g.Key.Month,
+                        TotalRevenue = g.Sum(o => o.TotalAmount)
+                    })
+                    .OrderBy(g => g.Year).ThenBy(g => g.Month)
+                    .ToListAsync();
+
+                // Format chart data
+                var chartData = new
+                {
+                    Labels = monthlyRevenue.Select(m => $"{m.Month}/{m.Year}").ToList(),
+                    Data = monthlyRevenue.Select(m => m.TotalRevenue).ToList()
+                };
+
+                // Combine all data into response
+                var dashboardData = new
+                {
+                    Revenue = new
+                    {
+                        Today = revenueToday,
+                        ThisMonth = revenueMonth,
+                        ThisYear = revenueYear
+                    },
+                    TotalOrdersSold = totalOrdersSold,
+                    PaymentMethodRevenue = paymentMethodRevenue,
+                    OrderStatus = new
+                    {
+                        New = newOrders,
+                        Processing = processingOrders,
+                        Shipping = shippingOrders,
+                        Completed = completedOrders,
+                        Cancelled = cancelledOrders,
+                        Failed = failedOrders,
+                        Returns = returnOrders
+                    },
+                    ChartData = new
+                    {
+                        Type = "line", // Can be "line" or "bar" for frontend rendering
+                        Data = chartData
+                    }
+                };
+
+                return Ok(dashboardData);
             }
             catch (Exception ex)
             {
-                // Log the exception
-                Console.WriteLine($"Error retrieving products: {ex.Message}");
+                Console.WriteLine($"Error retrieving dashboard data: {ex.Message}");
+                return StatusCode(500, "An error occurred while processing the dashboard request.");
+            }
+        }
+
+
+        [HttpGet]
+        [Route("GetOrderWithWebsite")]
+        [AllowAnonymous]
+        public async Task<IActionResult> GetPagedOrdersByWebsiteAsync(int website, int? page, int pagesize = 5)
+        {
+            try
+            {
+                int currentPage = page ?? 1;
+
+                var query = _context.Order
+                    .AsNoTracking()
+                    .Where(x => x.Website == website);
+
+                int countDetails = await query.CountAsync();
+
+                var orders = await query
+                    .OrderByDescending(x => x.Id)
+                    .Skip((currentPage - 1) * pagesize)
+                    .Take(pagesize)
+                    .ToListAsync();
+
+                var result = new PageResult<Order>
+                {
+                    Count = countDetails,
+                    PageIndex = currentPage,
+                    PageSize = pagesize,
+                    Items = orders
+                };
+
+                return Ok(result);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error retrieving paged orders: {ex.Message}");
                 return StatusCode(500, "An error occurred while processing the request.");
             }
         }
+
 
         // GET: api/Order/OrderWithDetails/5
         [HttpGet]
@@ -149,86 +289,6 @@ namespace Spectra.Controllers
             }
         }
 
-        [HttpGet]
-        [Route("OrderPageBrand")]
-        [BinaryAuthorize("Order", ActionType.Xem)]
-        public IActionResult OrderResultBrand(int? page, int pagesize = 5)
-        {
-            string pattern = "[ ,+(){}.*+?^$|]";
-            Regex rgx = new Regex(pattern);
-
-            try
-            {
-                var countDetails = _context.Order.AsNoTracking().Where(x => x.Website == 1).Count();
-                var currentPage = page ?? 1;
-                using (var context = _context)
-                {
-                    var OrderQuery = context.Order
-                    .AsNoTracking()
-                    .Where(x => x.Website == 1)
-                    .OrderByDescending(x => x.Id)
-                    .Skip((currentPage - 1) * pagesize)
-                    .Take(pagesize);
-
-                    var result = new PageResult<Order>
-                    {
-                        Count = countDetails,
-                        PageIndex = currentPage,
-                        PageSize = pagesize,
-                        Items = OrderQuery.ToList()
-                    };
-
-                    return Ok(result);
-                }
-            }
-            catch (Exception ex)
-            {
-                // Log the exception
-                Console.WriteLine($"Error retrieving products: {ex.Message}");
-                return StatusCode(500, "An error occurred while processing the request.");
-            }
-        }
-
-        [HttpGet]
-        [Route("OrderPageCT")]
-        [BinaryAuthorize("Order", ActionType.Xem)]
-        public IActionResult OrderResultCT(int? page, int pagesize = 5)
-        {
-            string pattern = "[ ,+(){}.*+?^$|]";
-            Regex rgx = new Regex(pattern);
-
-            try
-            {
-                var countDetails = _context.Order.AsNoTracking().Where(x => x.Website == 3).Count();
-                var currentPage = page ?? 1;
-                using (var context = _context)
-                {
-                    var OrderQuery = context.Order
-                    .AsNoTracking()
-                    .Where(x => x.Website == 3)
-                    .OrderByDescending(x => x.Id)
-                    .Skip((currentPage - 1) * pagesize)
-                    .Take(pagesize);
-
-                    var result = new PageResult<Order>
-                    {
-                        Count = countDetails,
-                        PageIndex = currentPage,
-                        PageSize = pagesize,
-                        Items = OrderQuery.ToList()
-                    };
-
-                    return Ok(result);
-                }
-            }
-            catch (Exception ex)
-            {
-                // Log the exception
-                Console.WriteLine($"Error retrieving products: {ex.Message}");
-                return StatusCode(500, "An error occurred while processing the request.");
-            }
-        }
-
         // GET: api/Order/5
         [HttpGet]
         [Route("orderReturn")]
@@ -293,7 +353,7 @@ namespace Spectra.Controllers
         }
         [HttpGet]
         [Route("OrderAcc")]
-        [BinaryAuthorize("Order", ActionType.Xem)]
+        //[BinaryAuthorize("Order", ActionType.Xem)]
         public async Task<IActionResult> GetOrderAccount([FromQuery] int? id)
         {
             if (!ModelState.IsValid)
@@ -338,7 +398,7 @@ namespace Spectra.Controllers
         // PUT: api/Orders/
         [HttpPost]
         [Route("PutOrder")]
-        [BinaryAuthorize("Order", ActionType.Sua)]
+        //[BinaryAuthorize("Order", ActionType.Sua)]
         public async Task<IActionResult> PutOrder([FromBody] Order order)
         {
             if (!ModelState.IsValid)

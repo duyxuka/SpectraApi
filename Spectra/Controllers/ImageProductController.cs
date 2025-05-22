@@ -14,7 +14,7 @@ namespace Spectra.Controllers
     [EnableCors("AddCors")]
     [Route("api/[controller]")]
     [ApiController]
-    [Authorize]
+    //[Authorize]
     public class ImageProductController : ControllerBase
     {
         private readonly AppDBContext _context;
