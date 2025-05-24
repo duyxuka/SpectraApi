@@ -6,6 +6,7 @@ using System.IO;
 using System.Linq;
 using System.Net;
 using System.Net.Mail;
+using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using ClosedXML.Excel;
@@ -45,9 +46,17 @@ namespace Spectra.Controllers
                         .Select(x => new WarrantyDisplay
                         {
                             Id = x.Id,
+                            Name = x.Name,
+                            Email = x.Email,
+                            Phone = x.Phone,
                             ProductName = x.ProductName,
                             ProductSeri = x.ProductSeri,
+                            Image = x.Image,
                             Status = x.Status,
+                            StoreCode = x.StoreCode,
+                            StartDate = x.StartDate,
+                            CreatedDate = x.CreatedDate,
+                            ModifiedDate = x.ModifiedDate
                         })
                         .Where(s => s.Status == true)
                         .OrderByDescending(x => x.Id)
@@ -79,6 +88,11 @@ namespace Spectra.Controllers
                 using (var context = _context)
                 {
                     var warantyQuery = context.Warranties
+                        .AsNoTracking()
+                        .Where(s => s.Status == true)
+                        .OrderByDescending(x => x.Id)
+                        .Skip((currentPage - 1) * pagesize)
+                        .Take(pagesize)
                         .Select(x => new WarrantyDisplay
                         {
                             Id = x.Id,
@@ -94,12 +108,7 @@ namespace Spectra.Controllers
                             StartDate = x.StartDate,
                             CreatedDate = x.CreatedDate,
                             ModifiedDate = x.ModifiedDate
-                        })
-                        .Where(s => s.Status == true)
-                        .OrderByDescending(x => x.Id)
-                        .AsNoTracking()
-                        .Skip((currentPage - 1) * pagesize)
-                        .Take(pagesize);
+                        });
 
                     var result = new PageResult<WarrantyDisplay>
                     {
@@ -122,36 +131,96 @@ namespace Spectra.Controllers
 
         [HttpGet]
         [Route("excel")]
+        [AllowAnonymous]
         //[BinaryAuthorize("Warranties", ActionType.XuatFile)]
-        public async Task<FileResult> ExportExcel()
+        public async Task<FileResult> ExportExcel(string query = null, DateTime? startDate = null, DateTime? endDate = null)
         {
             var data = await _context.Warranties.ToListAsync();
+
+            // Lọc theo query
+            if (!string.IsNullOrEmpty(query))
+            {
+                var normalizedQuery = RemoveVietnameseTones(query).ToLower();
+                data = data.Where(e =>
+                    (e.Name != null && RemoveVietnameseTones(e.Name).ToLower().Contains(normalizedQuery)) ||
+                    (e.Email != null && RemoveVietnameseTones(e.Email).ToLower().Contains(normalizedQuery)) ||
+                    (e.Phone != null && RemoveVietnameseTones(e.Phone).ToLower().Contains(normalizedQuery)) ||
+                    (e.ProductName != null && RemoveVietnameseTones(e.ProductName).ToLower().Contains(normalizedQuery)) ||
+                    (e.ProductSeri != null && RemoveVietnameseTones(e.ProductSeri).ToLower().Contains(normalizedQuery)) ||
+                    (e.StoreCode != null && RemoveVietnameseTones(e.StoreCode).ToLower().Contains(normalizedQuery))
+                ).ToList();
+            }
+
+            // Lọc theo ngày
+            if (startDate.HasValue && endDate.HasValue)
+            {
+                data = data.Where(e => e.CreatedDate >= startDate && e.CreatedDate <= endDate).ToList();
+            }
+            else if (startDate.HasValue)
+            {
+                data = data.Where(e => e.CreatedDate >= startDate).ToList();
+            }
+            else if (endDate.HasValue)
+            {
+                data = data.Where(e => e.CreatedDate <= endDate).ToList();
+            }
+
+            Console.WriteLine($"Số bản ghi /excel: {data.Count}");
             var fileName = "baohanh.xlsx";
-            return GenrateExcel(fileName, data);
-
+            return GenerateExcel(fileName, data);
         }
+        private string RemoveVietnameseTones(string text)
+        {
+            if (string.IsNullOrEmpty(text)) return text;
 
-        private FileResult GenrateExcel(string filename, IEnumerable<Warranty> warranties)
+            var normalized = text.Normalize(NormalizationForm.FormD);
+            var result = new StringBuilder();
+
+            foreach (var c in normalized)
+            {
+                var unicodeCategory = CharUnicodeInfo.GetUnicodeCategory(c);
+                if (unicodeCategory != UnicodeCategory.NonSpacingMark)
+                {
+                    result.Append(c);
+                }
+            }
+
+            return result.ToString()
+                .Replace("đ", "d")
+                .Replace("Đ", "D")
+                .Normalize(NormalizationForm.FormC);
+        }
+        private FileResult GenerateExcel(string fileName, IEnumerable<Warranty> warranties)
         {
             DataTable dataTable = new DataTable("dbo.Spectra_Warranty");
             dataTable.Columns.AddRange(new DataColumn[]
             {
-                new DataColumn("Tên"),
-                new DataColumn("Email"),
-                new DataColumn("Số điện thoại"),
-                new DataColumn("Sản phẩm"),
-                new DataColumn("Seri sản phẩm"),
-                new DataColumn("Ghi chú"),
-                new DataColumn("Đại lý"),
-                new DataColumn("Ngày đăng ký"),
-                new DataColumn("Ngày bắt đầu BH"),
-                new DataColumn("Ngày hết hạn BH"),
+        new DataColumn("Tên"),
+        new DataColumn("Email"),
+        new DataColumn("Số điện thoại"),
+        new DataColumn("Sản phẩm"),
+        new DataColumn("Seri sản phẩm"),
+        new DataColumn("Ghi chú"),
+        new DataColumn("Đại lý"),
+        new DataColumn("Ngày đăng ký"),
+        new DataColumn("Ngày bắt đầu BH"),
+        new DataColumn("Ngày hết hạn BH"),
             });
 
             foreach (var warranty in warranties)
             {
-                dataTable.Rows.Add(warranty.Name, warranty.Email, warranty.Phone, warranty.ProductName,
-                                    warranty.ProductSeri, warranty.Description, warranty.StoreCode, warranty.CreatedDate.ToString("dd/MM/yyyy"), warranty.StartDate.ToString("dd/MM/yyyy"), warranty.ModifiedDate.ToString("dd/MM/yyyy"));
+                dataTable.Rows.Add(
+                    warranty.Name,
+                    warranty.Email,
+                    warranty.Phone,
+                    warranty.ProductName,
+                    warranty.ProductSeri,
+                    warranty.Description,
+                    warranty.StoreCode,
+                    warranty.CreatedDate.ToString("dd/MM/yyyy"),
+                    warranty.StartDate.ToString("dd/MM/yyyy"),
+                    warranty.ModifiedDate.ToString("dd/MM/yyyy")
+                );
             }
 
             using (XLWorkbook wb = new XLWorkbook())
@@ -161,8 +230,8 @@ namespace Spectra.Controllers
                 {
                     wb.SaveAs(stream);
                     return File(stream.ToArray(),
-                        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-                        , filename);
+                        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                        fileName);
                 }
             }
         }

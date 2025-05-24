@@ -98,6 +98,7 @@ namespace Spectra.Controllers
 
         [HttpGet]
         [Route("excel")]
+        [AllowAnonymous]
         //[BinaryAuthorize("Warranties", ActionType.Sua)]
         public async Task<FileResult> ExportExcel()
         {

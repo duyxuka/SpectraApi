@@ -586,6 +586,53 @@ namespace Spectra.Controllers
             }
             return NoContent();
         }
-        
+
+        [HttpPost]
+        [Route("HashAllPasswords")]
+        [AllowAnonymous]
+        //[BinaryAuthorize("User", ActionType.Sua)]
+        public async Task<IActionResult> HashAllPasswords()
+        {
+            try
+            {
+                // Lấy tất cả tài khoản
+                var users = await _context.AccountUsers
+                    .Where(u => u.Status == true) // Chỉ xử lý tài khoản đang hoạt động
+                    .ToListAsync();
+
+                int updatedCount = 0;
+                foreach (var user in users)
+                {
+                    // Kiểm tra xem mật khẩu đã được băm chưa
+                    // BCrypt hashed passwords thường bắt đầu bằng "$2a$" hoặc "$2b$"
+                    if (!string.IsNullOrEmpty(user.Password) && !user.Password.StartsWith("$2"))
+                    {
+                        // Mã hóa mật khẩu bằng BCrypt
+                        user.Password = BCrypt.Net.BCrypt.HashPassword(user.Password);
+                        user.ModifiedDate = DateTime.Now;
+                        _context.Entry(user).State = EntityState.Modified;
+                        updatedCount++;
+                    }
+                }
+
+                if (updatedCount > 0)
+                {
+                    await _context.SaveChangesAsync();
+                }
+
+                return Ok(new
+                {
+                    Message = $"Đã mã hóa thành công {updatedCount} mật khẩu.",
+                    TotalUsersProcessed = users.Count,
+                    UpdatedCount = updatedCount
+                });
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Lỗi khi mã hóa mật khẩu: {ex.Message}");
+                return StatusCode(500, $"Lỗi hệ thống: {ex.Message}");
+            }
+        }
+
     }
 }

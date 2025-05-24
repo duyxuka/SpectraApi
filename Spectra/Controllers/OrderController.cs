@@ -32,10 +32,11 @@ namespace Spectra.Controllers
         // GET: api/Order
         [HttpGet]
         //[BinaryAuthorize("Order", ActionType.Xem)]
-        public IEnumerable<Order> GetOrder()
+        public IEnumerable<Order> GetOrder(int website)
         {
             return _context.Order
                 .AsNoTracking()
+                .Where(x => x.Website == website)
                 .OrderByDescending(x => x.Id)
                 .ToList();
         }

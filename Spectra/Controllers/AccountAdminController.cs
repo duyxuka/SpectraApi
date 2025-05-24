@@ -37,12 +37,14 @@ namespace Spectra.Controllers
 
         // GET: api/AccountAdmin
         [HttpGet]
-        //[BinaryAuthorize("Admin", ActionType.Xem)]
+        [AllowAnonymous]
         public async Task<IEnumerable<AdminDTO>> GetAccountAdmins()
         {
             var accounts = await (from ac in _context.AccountAdmins
-                                  join ur in _context.UserRoleAdmins on ac.Id equals ur.AccountAdminId
-                                  join ro in _context.Roles on ur.RolesId equals ro.Id
+                                  join ur in _context.UserRoleAdmins on ac.Id equals ur.AccountAdminId into urs
+                                  from ur in urs.DefaultIfEmpty()
+                                  join ro in _context.Roles on ur.RolesId equals ro.Id into ros
+                                  from ro in ros.DefaultIfEmpty()
                                   select new
                                   {
                                       ac.Id,
@@ -50,10 +52,20 @@ namespace Spectra.Controllers
                                       ac.Name,
                                       ac.Status,
                                       ac.Email,
-                                      RoleName = ro.Name
+                                      RoleName = ro != null ? ro.Name : null
                                   })
                                  .AsNoTracking()
                                  .ToListAsync();
+
+            var accountPermissions = await _context.AccountPermissions
+                .Include(ap => ap.Modules)
+                .Select(ap => new
+                {
+                    ap.AccountAdminId,
+                    ModuleName = ap.Modules.Name,
+                    ap.PermissionValue
+                })
+                .ToListAsync();
 
             var grouped = accounts
                 .GroupBy(a => new { a.Id, a.Code, a.Name, a.Status, a.Email })
@@ -64,7 +76,14 @@ namespace Spectra.Controllers
                     Name = g.Key.Name,
                     Status = g.Key.Status,
                     Email = g.Key.Email,
-                    RoleNames = g.Select(x => x.RoleName).Distinct().ToList()
+                    RoleNames = g.Select(x => x.RoleName).Where(r => r != null).Distinct().ToList(),
+                    AccountPermissions = accountPermissions
+                        .Where(ap => ap.AccountAdminId == g.Key.Id)
+                        .GroupBy(ap => ap.ModuleName)
+                        .ToDictionary(
+                            ap => ap.Key,
+                            ap => ap.Aggregate(0, (acc, val) => acc | val.PermissionValue)
+                        )
                 });
 
             return grouped;
@@ -77,45 +96,59 @@ namespace Spectra.Controllers
             var account = await _context.AccountAdmins
                 .Include(u => u.UserRoleAdmins)
                 .ThenInclude(ur => ur.Roles)
+                .Include(u => u.AccountPermissions) // Thêm quyền tài khoản
+                .ThenInclude(ap => ap.Modules) // Liên kết với Modules
                 .FirstOrDefaultAsync(u => u.Email == user.Email);
 
-            if (!PasswordHelper.VerifyPassword(user.Password, account.PasswordHash, account.PasswordSalt) || !account.Status)
+            if (account == null || !PasswordHelper.VerifyPassword(user.Password, account.PasswordHash, account.PasswordSalt) || !account.Status)
                 return BadRequest("Sai mật khẩu hoặc tài khoản đã bị khóa");
 
-            // Lấy quyền từ tất cả role → tổng hợp từng module bằng bitwise OR
-            var permissions = await (from ur in _context.UserRoleAdmins
-                                     join rp in _context.Permissions on ur.RolesId equals rp.RolesId
-                                     join m in _context.Modules on rp.ModulesId equals m.Id
-                                     where ur.AccountAdminId == account.Id
-                                     select new
-                                     {
-                                         Module = m.Name,
-                                         Permission = rp.PermissionValue
-                                     }).ToListAsync();
+            // Lấy quyền từ vai trò
+            var rolePermissions = await (from ur in _context.UserRoleAdmins
+                                         join rp in _context.Permissions on ur.RolesId equals rp.RolesId
+                                         join m in _context.Modules on rp.ModulesId equals m.Id
+                                         where ur.AccountAdminId == account.Id
+                                         select new
+                                         {
+                                             Module = m.Name,
+                                             Permission = rp.PermissionValue
+                                         }).ToListAsync();
 
-            var permissionDict = permissions
+            // Lấy quyền từ tài khoản
+            var accountPermissions = account.AccountPermissions
+                .Select(ap => new
+                {
+                    Module = ap.Modules.Name,
+                    Permission = ap.PermissionValue
+                }).ToList();
+
+            // Tổng hợp quyền từ vai trò và tài khoản
+            var allPermissions = rolePermissions.Concat(accountPermissions)
                 .GroupBy(p => p.Module)
                 .ToDictionary(
                     g => g.Key,
-                    g => g.Aggregate(0, (acc, val) => acc | val.Permission) // tổng hợp bitwise OR
+                    g => g.Aggregate(0, (acc, val) => acc | val.Permission) // Bitwise OR
                 );
 
             var claims = new List<Claim>
             {
                 new Claim(ClaimTypes.Name, account.Name),
                 new Claim("UserId", account.Id.ToString()),
-                new Claim("Permissions", JsonConvert.SerializeObject(permissionDict)) // serialize permissions
+                new Claim("Permissions", JsonConvert.SerializeObject(allPermissions))
             };
 
-            var token = GenerateJwtToken(claims); // bạn tự code phần này
+            var token = GenerateJwtToken(claims);
 
-            return Ok(new {
+            return Ok(new
+            {
                 token,
                 User = new
                 {
                     Id = account.Id,
                     Email = account.Email,
-                    Name = account.Name
+                    Name = account.Name,
+                    RoleNames = account.UserRoleAdmins.Select(ur => ur.Roles.Name).ToList(),
+                    Permissions = allPermissions // Trả về quyền tổng hợp
                 }
             });
         }
@@ -152,7 +185,6 @@ namespace Spectra.Controllers
 
         // GET: api/AccountAdmin/5
         [HttpGet("{id}")]
-        //[BinaryAuthorize("Admin", ActionType.Xem)]
         public async Task<IActionResult> GetAccountAdmin([FromRoute] int? id)
         {
             if (!ModelState.IsValid)
@@ -161,8 +193,9 @@ namespace Spectra.Controllers
             }
 
             var accountAdmin = await _context.AccountAdmins
-                .Where(ac => ac.Id == id)
-                .FirstOrDefaultAsync();
+                .Include(a => a.AccountPermissions)
+                .ThenInclude(ap => ap.Modules)
+                .FirstOrDefaultAsync(ac => ac.Id == id);
 
             if (accountAdmin == null)
             {
@@ -181,6 +214,13 @@ namespace Spectra.Controllers
                       })
                 .ToListAsync();
 
+            var accountPermissions = accountAdmin.AccountPermissions
+                .GroupBy(ap => ap.Modules.Name)
+                .ToDictionary(
+                    g => g.Key,
+                    g => g.Aggregate(0, (acc, ap) => acc | ap.PermissionValue)
+                );
+
             var result = new
             {
                 accountAdmin.Id,
@@ -188,7 +228,8 @@ namespace Spectra.Controllers
                 accountAdmin.Name,
                 accountAdmin.Status,
                 accountAdmin.Email,
-                Roles = roles
+                Roles = roles,
+                AccountPermissions = accountPermissions
             };
 
             return Ok(result);
@@ -197,7 +238,7 @@ namespace Spectra.Controllers
 
         [HttpGet]
         [Route("GetPermissionsByRoles")]
-        public async Task<IActionResult> GetPermissionsByRoles([FromQuery] int[] roleIds)
+        public async Task<IActionResult> GetPermissionsByRoles([FromQuery] int[] roleIds, [FromQuery] int? accountId = null)
         {
             if (roleIds == null || roleIds.Length == 0)
             {
@@ -206,7 +247,7 @@ namespace Spectra.Controllers
 
             try
             {
-                // Lấy tất cả các module từ bảng Spectra_Modules
+                // Lấy tất cả modules
                 var modules = await _context.Modules
                     .Select(m => new
                     {
@@ -215,32 +256,45 @@ namespace Spectra.Controllers
                     })
                     .ToListAsync();
 
-                // Lấy danh sách quyền từ bảng Spectra_Permissions cho các roleIds
-                var permissionsRaw = await _context.Permissions
+                // Lấy quyền từ vai trò
+                var rolePermissions = await _context.Permissions
                     .Where(p => roleIds.Contains(p.RolesId))
-                    .Select(p => new
+                    .Select(p => new PermissionDetail
                     {
-                        p.ModulesId,
-                        p.PermissionValue
+                        ModulesId = p.ModulesId,
+                        PermissionValue = p.PermissionValue
                     })
                     .ToListAsync();
 
-                // Gộp quyền trong bộ nhớ (LINQ-to-Objects)
-                var permissions = permissionsRaw
+                List<PermissionDetail> accountPermissions = new List<PermissionDetail>();
+                if (accountId.HasValue)
+                {
+                    accountPermissions = await _context.AccountPermissions
+                        .Where(ap => ap.AccountAdminId == accountId.Value)
+                        .Select(ap => new PermissionDetail
+                        {
+                            ModulesId = ap.ModulesId,
+                            PermissionValue = ap.PermissionValue
+                        })
+                        .ToListAsync();
+                }
+
+                // Tổng hợp quyền
+                var allPermissions = rolePermissions.Concat(accountPermissions)
                     .GroupBy(p => p.ModulesId)
                     .Select(g => new
                     {
                         ModulesId = g.Key,
-                        PermissionValue = g.Aggregate(0, (acc, p) => acc | p.PermissionValue) // Gộp quyền ở phía client
-            })
+                        PermissionValue = g.Aggregate(0, (acc, p) => acc | p.PermissionValue)
+                    })
                     .ToList();
 
-                // Ánh xạ tất cả module với quyền (nếu không có quyền thì PermissionValue = 0)
+                // Ánh xạ với modules
                 var result = modules.Select(m => new
                 {
                     ModulesId = m.Id,
                     ModuleName = m.Name,
-                    PermissionValue = permissions.FirstOrDefault(p => p.ModulesId == m.Id)?.PermissionValue ?? 0
+                    PermissionValue = allPermissions.FirstOrDefault(p => p.ModulesId == m.Id)?.PermissionValue ?? 0
                 }).ToList();
 
                 return Ok(result);
@@ -251,6 +305,69 @@ namespace Spectra.Controllers
                 return StatusCode(500, "Internal Server Error: " + ex.Message);
             }
         }
+        public class PermissionDetail
+        {
+            public int ModulesId { get; set; }
+            public int PermissionValue { get; set; }
+        }
+
+        [HttpPost("assign-account-permission")]
+        public async Task<IActionResult> AssignAccountPermission([FromBody] AssignPermissionModel model)
+        {
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(ModelState);
+            }
+
+            var account = await _context.AccountAdmins.FindAsync(model.AccountAdminId);
+            if (account == null)
+            {
+                return NotFound(new { Message = "Tài khoản không tồn tại." });
+            }
+
+            var module = await _context.Modules.FindAsync(model.ModulesId);
+            if (module == null)
+            {
+                return NotFound(new { Message = "Module không tồn tại." });
+            }
+
+            var existingPermission = await _context.AccountPermissions
+                .FirstOrDefaultAsync(ap => ap.AccountAdminId == model.AccountAdminId && ap.ModulesId == model.ModulesId);
+
+            if (existingPermission != null)
+            {
+                existingPermission.PermissionValue = model.PermissionValue;
+            }
+            else
+            {
+                var permission = new AccountPermissions
+                {
+                    AccountAdminId = model.AccountAdminId,
+                    ModulesId = model.ModulesId,
+                    PermissionValue = model.PermissionValue
+                };
+                _context.AccountPermissions.Add(permission);
+            }
+
+            try
+            {
+                await _context.SaveChangesAsync();
+                return Ok(new { Message = "Gán quyền thành công." });
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine("Database Error: " + ex.Message);
+                return StatusCode(500, new { Message = "Lỗi khi lưu dữ liệu: " + ex.Message });
+            }
+        }
+
+        public class AssignPermissionModel
+        {
+            public int AccountAdminId { get; set; }
+            public int ModulesId { get; set; }
+            public int PermissionValue { get; set; }
+        }
+
         // PUT: api/AccountAdmin/5
         //[HttpPost]
         //[Route("PutAccountAdmin")]
@@ -278,38 +395,38 @@ namespace Spectra.Controllers
 
         [HttpPost]
         [Route("PutAccountAdmin")]
-        //[BinaryAuthorize("Admin", ActionType.Sua)]
-        public async Task<IActionResult> PutAccountAdmin([FromBody] AccountAdmin accountAdmin)
+        public async Task<IActionResult> PutAccountAdmin([FromBody] PutAccountAdminModel model)
         {
             if (!ModelState.IsValid)
             {
                 var errors = ModelState.Values.SelectMany(v => v.Errors).Select(e => e.ErrorMessage);
-                Console.WriteLine("ModelState Errors: " + string.Join(", ", errors));
                 return BadRequest(new { Message = "Dữ liệu không hợp lệ", Errors = errors });
             }
 
-            var existingAccount = await _context.AccountAdmins.FindAsync(accountAdmin.Id);
+            var existingAccount = await _context.AccountAdmins
+                .Include(a => a.AccountPermissions)
+                .FirstOrDefaultAsync(a => a.Id == model.AccountAdmin.Id);
             if (existingAccount == null)
             {
                 return NotFound(new { Message = "Tài khoản không tồn tại." });
             }
 
-            // Kiểm tra trùng lặp Code hoặc Email (ngoại trừ chính tài khoản đang cập nhật)
-            if (_context.AccountAdmins.Any(a => a.Code == accountAdmin.Code && a.Id != accountAdmin.Id))
+            // Kiểm tra trùng lặp
+            if (_context.AccountAdmins.Any(a => a.Code == model.AccountAdmin.Code && a.Id != model.AccountAdmin.Id))
             {
                 return BadRequest(new { Message = "Mã tài khoản đã tồn tại." });
             }
-            if (_context.AccountAdmins.Any(a => a.Email == accountAdmin.Email && a.Id != accountAdmin.Id))
+            if (_context.AccountAdmins.Any(a => a.Email == model.AccountAdmin.Email && a.Id != model.AccountAdmin.Id))
             {
                 return BadRequest(new { Message = "Email đã tồn tại." });
             }
 
             // Cập nhật mật khẩu nếu có
-            if (!string.IsNullOrEmpty(accountAdmin.Password) && accountAdmin.Password != "null")
+            if (!string.IsNullOrEmpty(model.AccountAdmin.Password) && model.AccountAdmin.Password != "null")
             {
                 try
                 {
-                    PasswordHelper.CreatePasswordHash(accountAdmin.Password, out var passwordHash, out var passwordSalt);
+                    PasswordHelper.CreatePasswordHash(model.AccountAdmin.Password, out var passwordHash, out var passwordSalt);
                     existingAccount.PasswordHash = passwordHash;
                     existingAccount.PasswordSalt = passwordSalt;
                 }
@@ -320,19 +437,55 @@ namespace Spectra.Controllers
                 }
             }
 
-            existingAccount.Code = accountAdmin.Code;
-            existingAccount.Name = accountAdmin.Name;
-            existingAccount.Email = accountAdmin.Email;
-            existingAccount.Status = accountAdmin.Status;
+            // Cập nhật thông tin tài khoản
+            existingAccount.Code = model.AccountAdmin.Code;
+            existingAccount.Name = model.AccountAdmin.Name;
+            existingAccount.Email = model.AccountAdmin.Email;
+            existingAccount.Status = model.AccountAdmin.Status;
             existingAccount.ModifiedDate = DateTime.Now;
+
+            // Cập nhật vai trò
+            var existingRoles = _context.UserRoleAdmins.Where(ur => ur.AccountAdminId == model.AccountAdmin.Id).ToList();
+            _context.UserRoleAdmins.RemoveRange(existingRoles);
+            if (model.RoleIds != null && model.RoleIds.Any())
+            {
+                foreach (var roleId in model.RoleIds)
+                {
+                    _context.UserRoleAdmins.Add(new UserRoleAdmin
+                    {
+                        AccountAdminId = model.AccountAdmin.Id,
+                        RolesId = roleId
+                    });
+                }
+            }
+
+            // Cập nhật quyền tài khoản chỉ khi có thay đổi
+            if (model.AccountPermissions != null && model.AccountPermissions.Any())
+            {
+                // Xóa các quyền hiện có chỉ nếu có quyền mới để thay thế
+                var existingPermissions = _context.AccountPermissions.Where(ap => ap.AccountAdminId == model.AccountAdmin.Id).ToList();
+                _context.AccountPermissions.RemoveRange(existingPermissions);
+
+                foreach (var perm in model.AccountPermissions)
+                {
+                    _context.AccountPermissions.Add(new AccountPermissions
+                    {
+                        AccountAdminId = model.AccountAdmin.Id,
+                        ModulesId = perm.ModulesId,
+                        PermissionValue = perm.PermissionValue
+                    });
+                }
+            }
+            // Nếu model.AccountPermissions là null hoặc rỗng, giữ nguyên quyền hiện tại
 
             try
             {
                 await _context.SaveChangesAsync();
+                return NoContent();
             }
             catch (DbUpdateConcurrencyException)
             {
-                if (!_context.AccountAdmins.Any(e => e.Id == accountAdmin.Id))
+                if (!_context.AccountAdmins.Any(e => e.Id == model.AccountAdmin.Id))
                 {
                     return NotFound(new { Message = "Tài khoản không tồn tại." });
                 }
@@ -344,8 +497,13 @@ namespace Spectra.Controllers
                 Console.WriteLine("Database Error: " + ex.Message);
                 return StatusCode(500, new { Message = "Lỗi khi lưu dữ liệu: " + ex.Message });
             }
+        }
 
-            return NoContent();
+        public class PutAccountAdminModel
+        {
+            public AccountAdmin AccountAdmin { get; set; }
+            public List<int> RoleIds { get; set; } = new List<int>();
+            public List<AccountPermissionModel> AccountPermissions { get; set; } = new List<AccountPermissionModel>();
         }
 
         // POST: api/AccountAdmin
@@ -369,14 +527,23 @@ namespace Spectra.Controllers
         [HttpPost]
         [Route("PostAccountAdmin")]
         [AllowAnonymous]
-        //[BinaryAuthorize("Admin", ActionType.Them)]
-        public async Task<IActionResult> PostAccountAdmin([FromBody] AccountAdmin accountAdmin)
+        public async Task<IActionResult> PostAccountAdmin([FromBody] PostAccountAdminModel model)
         {
             if (!ModelState.IsValid)
             {
                 return BadRequest(ModelState);
             }
 
+            if (_context.AccountAdmins.Any(a => a.Code == model.AccountAdmin.Code))
+            {
+                return BadRequest(new { Message = "Mã tài khoản đã tồn tại." });
+            }
+            if (_context.AccountAdmins.Any(a => a.Email == model.AccountAdmin.Email))
+            {
+                return BadRequest(new { Message = "Email đã tồn tại." });
+            }
+
+            var accountAdmin = model.AccountAdmin;
             accountAdmin.CreatedDate = DateTime.Now;
             accountAdmin.ModifiedDate = DateTime.Now;
 
@@ -384,17 +551,67 @@ namespace Spectra.Controllers
             PasswordHelper.CreatePasswordHash(accountAdmin.Password, out var passwordHash, out var passwordSalt);
             accountAdmin.PasswordHash = passwordHash;
             accountAdmin.PasswordSalt = passwordSalt;
-            accountAdmin.Password = "null"; // Không lưu trữ mật khẩu gốc
+            accountAdmin.Password = "null";
 
             _context.AccountAdmins.Add(accountAdmin);
             await _context.SaveChangesAsync();
 
-            return CreatedAtAction("GetAccountAdmin", new { id = accountAdmin.Id }, accountAdmin);
+            // Gán vai trò (nếu có)
+            if (model.RoleIds != null && model.RoleIds.Any())
+            {
+                foreach (var roleId in model.RoleIds)
+                {
+                    var userRole = new UserRoleAdmin
+                    {
+                        AccountAdminId = accountAdmin.Id,
+                        RolesId = roleId
+                    };
+                    _context.UserRoleAdmins.Add(userRole);
+                }
+            }
+
+            // Gán quyền tài khoản (nếu có)
+            if (model.AccountPermissions != null && model.AccountPermissions.Any())
+            {
+                foreach (var perm in model.AccountPermissions)
+                {
+                    var permission = new AccountPermissions
+                    {
+                        AccountAdminId = accountAdmin.Id,
+                        ModulesId = perm.ModulesId,
+                        PermissionValue = perm.PermissionValue
+                    };
+                    _context.AccountPermissions.Add(permission);
+                }
+            }
+
+            try
+            {
+                await _context.SaveChangesAsync();
+                return CreatedAtAction("GetAccountAdmin", new { id = accountAdmin.Id }, accountAdmin);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine("Database Error: " + ex.Message);
+                return StatusCode(500, new { Message = "Lỗi khi lưu dữ liệu: " + ex.Message });
+            }
+        }
+
+        public class PostAccountAdminModel
+        {
+            public AccountAdmin AccountAdmin { get; set; }
+            public List<int> RoleIds { get; set; } = new List<int>();
+            public List<AccountPermissionModel> AccountPermissions { get; set; } = new List<AccountPermissionModel>();
+        }
+
+        public class AccountPermissionModel
+        {
+            public int ModulesId { get; set; }
+            public int PermissionValue { get; set; }
         }
 
         // DELETE: api/AccountAdmin/5
         [HttpDelete("{id}")]
-        //[BinaryAuthorize("Admin", ActionType.Xoa)]
         public async Task<IActionResult> DeleteAccountAdmin([FromRoute] int? id)
         {
             if (!ModelState.IsValid)
@@ -402,16 +619,30 @@ namespace Spectra.Controllers
                 return BadRequest(ModelState);
             }
 
-            var accountAdmin = await _context.AccountAdmins.FindAsync(id);
+            var accountAdmin = await _context.AccountAdmins
+                .Include(a => a.AccountPermissions)
+                .Include(a => a.UserRoleAdmins)
+                .FirstOrDefaultAsync(a => a.Id == id);
             if (accountAdmin == null)
             {
                 return NotFound();
             }
 
+            // Xóa quyền tài khoản và vai trò
+            _context.AccountPermissions.RemoveRange(accountAdmin.AccountPermissions);
+            _context.UserRoleAdmins.RemoveRange(accountAdmin.UserRoleAdmins);
             _context.AccountAdmins.Remove(accountAdmin);
-            await _context.SaveChangesAsync();
 
-            return Ok(accountAdmin);
+            try
+            {
+                await _context.SaveChangesAsync();
+                return Ok(accountAdmin);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine("Database Error: " + ex.Message);
+                return StatusCode(500, new { Message = "Lỗi khi xóa dữ liệu: " + ex.Message });
+            }
         }
 
         private bool AccountAdminExists(int? id)

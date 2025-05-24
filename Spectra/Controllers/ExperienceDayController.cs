@@ -6,6 +6,8 @@ using System.Linq;
 using System.Threading.Tasks;
 using ClosedXML.Excel;
 using Hangfire;
+using System.Text;
+using System.Text.RegularExpressions;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Cors;
 using Microsoft.AspNetCore.Http;
@@ -13,6 +15,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Spectra.Models;
 using Spectra.Models.Authorize;
+using System.Globalization;
 
 namespace Spectra.Controllers
 {
@@ -34,15 +37,52 @@ namespace Spectra.Controllers
         //[BinaryAuthorize("ExperienceDay", ActionType.Xem)]
         public IEnumerable<ExperienceDay> GetExperienceDays()
         {
-            return _context.ExperienceDays.Where(x => x.Website == 1).OrderByDescending(x => x.CreateDate);
+            return _context.ExperienceDays.ToList();
         }
 
         [HttpGet]
-        [Route("HCM")]
+        [Route("ExperienceDaysWebsite")]
         //[BinaryAuthorize("ExperienceDay", ActionType.Xem)]
-        public IEnumerable<ExperienceDay> GetExperienceDaysHCM()
+        public IEnumerable<ExperienceDay> GetExperienceDaysHCM(int website)
         {
-            return _context.ExperienceDays.Where(x => x.Website == 2).OrderByDescending(x => x.CreateDate);
+            return _context.ExperienceDays.AsNoTracking().Where(x => x.Website == website).OrderByDescending(x => x.CreateDate);
+
+        }
+
+        [HttpGet]
+        [Route("ExperienceDaysWebsiteonPage")]
+        //[BinaryAuthorize("ExperienceDay", ActionType.Xem)]
+        public async Task<IActionResult> GetExperienceDaysOnPage(int website, int? page, int pagesize = 5)
+        {
+           try
+            {
+                int currentPage = page ?? 1;
+
+                var query = _context.ExperienceDays.AsNoTracking().Where(x => x.Website == website);
+
+                int countDetails = await query.CountAsync();
+
+                var experday = await query
+                    .OrderByDescending(x => x.CreateDate)
+                    .Skip((currentPage - 1) * pagesize)
+                    .Take(pagesize)
+                    .ToListAsync();
+
+                var result = new PageResult<ExperienceDay>
+                {
+                    Count = countDetails,
+                    PageIndex = currentPage,
+                    PageSize = pagesize,
+                    Items = experday
+                };
+
+                return Ok(result);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error retrieving paged orders: {ex.Message}");
+                return StatusCode(500, "An error occurred while processing the request.");
+            }
         }
 
         // GET: api/ExperienceDay/5
@@ -68,79 +108,62 @@ namespace Spectra.Controllers
         [HttpGet]
         [Route("excel")]
         //[BinaryAuthorize("ExperienceDay", ActionType.XuatFile)]
-        public async Task<FileResult> ExportExcel(string query = null, DateTime? startDate = null, DateTime? endDate = null)
+        public async Task<FileResult> ExportExcel(int website, string query = null, DateTime? startDate = null, DateTime? endDate = null)
         {
-            // Lấy danh sách ban đầu
-            var data = _context.ExperienceDays.Where(x => x.Website == 1).AsQueryable();
+            var data = await _context.ExperienceDays
+                .Where(x => x.Website == website)
+                .ToListAsync();
 
-            // Lọc theo tên, email hoặc số điện thoại nếu có query
+            // Lọc theo query
             if (!string.IsNullOrEmpty(query))
             {
+                var normalizedQuery = RemoveVietnameseTones(query).ToLower();
                 data = data.Where(e =>
-                    e.Name.Contains(query) ||
-                    e.Email.Contains(query) ||
-                    e.Phone.Contains(query));
+                    (e.Name != null && RemoveVietnameseTones(e.Name).ToLower().Contains(normalizedQuery)) ||
+                    (e.Email != null && RemoveVietnameseTones(e.Email).ToLower().Contains(normalizedQuery)) ||
+                    (e.Phone != null && RemoveVietnameseTones(e.Phone).ToLower().Contains(normalizedQuery))
+                ).ToList();
             }
 
-            // Lọc theo ngày nếu có startDate và endDate
+            // Lọc theo ngày
             if (startDate.HasValue && endDate.HasValue)
             {
-                data = data.Where(e => e.CreateDate >= startDate && e.CreateDate <= endDate);
+                data = data.Where(e => e.CreateDate >= startDate && e.CreateDate <= endDate).ToList();
             }
             else if (startDate.HasValue)
             {
-                data = data.Where(e => e.CreateDate >= startDate);
+                data = data.Where(e => e.CreateDate >= startDate).ToList();
             }
             else if (endDate.HasValue)
             {
-                data = data.Where(e => e.CreateDate <= endDate);
+                data = data.Where(e => e.CreateDate <= endDate).ToList();
             }
 
-            var result = await data.ToListAsync();
+            Console.WriteLine($"Số bản ghi /experiencedays/excel: {data.Count}");
             var fileName = "danh-sach-dky-trai-nghiem.xlsx";
-
-            return GenrateExcel(fileName, result);
-
+            return GenrateExcel(fileName, data);
         }
-
-        [HttpGet]
-        [Route("excelHCM")]
-        //[BinaryAuthorize("ExperienceDay", ActionType.XuatFile)]
-        public async Task<FileResult> ExportExcelHCM(string query = null, DateTime? startDate = null, DateTime? endDate = null)
+        private string RemoveVietnameseTones(string text)
         {
-            // Lấy danh sách ban đầu
-            var data = _context.ExperienceDays.Where(x => x.Website == 2).AsQueryable();
+            if (string.IsNullOrEmpty(text)) return text;
 
-            // Lọc theo tên, email hoặc số điện thoại nếu có query
-            if (!string.IsNullOrEmpty(query))
+            var normalized = text.Normalize(NormalizationForm.FormD);
+            var result = new StringBuilder();
+
+            foreach (var c in normalized)
             {
-                data = data.Where(e =>
-                    e.Name.Contains(query) ||
-                    e.Email.Contains(query) ||
-                    e.Phone.Contains(query));
+                var unicodeCategory = CharUnicodeInfo.GetUnicodeCategory(c);
+                if (unicodeCategory != UnicodeCategory.NonSpacingMark)
+                {
+                    result.Append(c);
+                }
             }
 
-            // Lọc theo ngày nếu có startDate và endDate
-            if (startDate.HasValue && endDate.HasValue)
-            {
-                data = data.Where(e => e.CreateDate >= startDate && e.CreateDate <= endDate);
-            }
-            else if (startDate.HasValue)
-            {
-                data = data.Where(e => e.CreateDate >= startDate);
-            }
-            else if (endDate.HasValue)
-            {
-                data = data.Where(e => e.CreateDate <= endDate);
-            }
-
-            var result = await data.ToListAsync();
-            var fileName = "danh-sach-dky-trai-nghiem.xlsx";
-
-            return GenrateExcel(fileName, result);
-
+            return result.ToString()
+                .Replace("đ", "d")
+                .Replace("Đ", "D")
+                .Normalize(NormalizationForm.FormC);
         }
-
         private FileResult GenrateExcel(string filename, IEnumerable<ExperienceDay> experienceDays)
         {
             DataTable dataTable = new DataTable("dbo.Spectra_Warranty");

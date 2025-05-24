@@ -4,7 +4,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 
 namespace Spectra.Migrations
 {
-    public partial class v : Migration
+    public partial class v1 : Migration
     {
         protected override void Up(MigrationBuilder migrationBuilder)
         {
@@ -37,7 +37,6 @@ namespace Spectra.Migrations
                         .Annotation("SqlServer:ValueGenerationStrategy", SqlServerValueGenerationStrategy.IdentityColumn),
                     Code = table.Column<string>(nullable: false),
                     Name = table.Column<string>(maxLength: 250, nullable: true),
-                    Gender = table.Column<bool>(nullable: true),
                     Email = table.Column<string>(nullable: false),
                     Phone = table.Column<string>(nullable: false),
                     Status = table.Column<bool>(nullable: false),
@@ -869,6 +868,33 @@ namespace Spectra.Migrations
                 });
 
             migrationBuilder.CreateTable(
+                name: "Spectra_AccountPermissions",
+                columns: table => new
+                {
+                    Id = table.Column<int>(nullable: false)
+                        .Annotation("SqlServer:ValueGenerationStrategy", SqlServerValueGenerationStrategy.IdentityColumn),
+                    AccountAdminId = table.Column<int>(nullable: false),
+                    ModulesId = table.Column<int>(nullable: false),
+                    PermissionValue = table.Column<int>(nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Spectra_AccountPermissions", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_Spectra_AccountPermissions_Spectra_AccountAdmin_AccountAdminId",
+                        column: x => x.AccountAdminId,
+                        principalTable: "Spectra_AccountAdmin",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                    table.ForeignKey(
+                        name: "FK_Spectra_AccountPermissions_Spectra_Modules_ModulesId",
+                        column: x => x.ModulesId,
+                        principalTable: "Spectra_Modules",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
                 name: "Spectra_PolicyDetail",
                 columns: table => new
                 {
@@ -1252,6 +1278,7 @@ namespace Spectra.Migrations
                     ProductId = table.Column<int>(nullable: true),
                     Price = table.Column<float>(nullable: false),
                     SalePrice = table.Column<float>(nullable: false),
+                    JobId = table.Column<string>(nullable: true),
                     Status = table.Column<bool>(nullable: false),
                     CreatedDate = table.Column<DateTime>(nullable: false),
                     ModifiedDate = table.Column<DateTime>(nullable: false)
@@ -1441,6 +1468,16 @@ namespace Spectra.Migrations
                 column: "Email",
                 unique: true,
                 filter: "[Email] IS NOT NULL");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Spectra_AccountPermissions_AccountAdminId",
+                table: "Spectra_AccountPermissions",
+                column: "AccountAdminId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Spectra_AccountPermissions_ModulesId",
+                table: "Spectra_AccountPermissions",
+                column: "ModulesId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_Spectra_AccountUser_Code",
@@ -1688,6 +1725,9 @@ namespace Spectra.Migrations
 
         protected override void Down(MigrationBuilder migrationBuilder)
         {
+            migrationBuilder.DropTable(
+                name: "Spectra_AccountPermissions");
+
             migrationBuilder.DropTable(
                 name: "Spectra_AgencySeo");
 

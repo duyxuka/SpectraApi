@@ -37,6 +37,7 @@ namespace Spectra.Controllers
 
         // GET: api/Banner/5
         [HttpGet("{id}")]
+        [BinaryAuthorize("Banner", ActionType.Xem)]
         public async Task<IActionResult> GetBanner([FromRoute] int? id)
         {
             if (!ModelState.IsValid)
@@ -58,6 +59,7 @@ namespace Spectra.Controllers
         // PUT: api/Banner/5
         [HttpPost]
         [Route("PutBanner")]
+        [BinaryAuthorize("Banner", ActionType.Sua)]
         public async Task<IActionResult> PutBanner([FromBody] Banner banner)
         {
             if (!ModelState.IsValid)
@@ -83,6 +85,7 @@ namespace Spectra.Controllers
 
         // POST: api/Banner
         [HttpPost]
+        [BinaryAuthorize("Banner", ActionType.Them)]
         public async Task<IActionResult> PostBanner([FromBody] Banner banner)
         {
             if (!ModelState.IsValid)
@@ -99,6 +102,7 @@ namespace Spectra.Controllers
 
         // DELETE: api/Banner/5
         [HttpDelete("{id}")]
+        [BinaryAuthorize("Banner", ActionType.Xoa)]
         public async Task<IActionResult> DeleteBanner([FromRoute] int? id)
         {
             if (!ModelState.IsValid)
@@ -121,18 +125,6 @@ namespace Spectra.Controllers
         private bool BannerExists(int? id)
         {
             return _context.Banners.Any(e => e.Id == id);
-        }
-        [HttpGet]
-        [Route("get-data-chart")]
-        public IActionResult GetDataToChart()
-        {
-            List<int> datas = new List<int>();
-            datas.Add(_context.Products.Count());
-            datas.Add(_context.Warranties.Count());
-            datas.Add(_context.Order.Where(x=> x.Status == 3).Count() + _context.OrderCus.Where(x => x.Status == 3).Count());
-            datas.Add(_context.AccountAdmins.Count());
-            datas.Add(_context.AccountUsers.Count());
-            return Ok(datas);
         }
     }
 }

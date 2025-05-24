@@ -21,4 +21,23 @@ namespace Spectra.Models
         public ICollection<UserRoleCustomer> UserRoleCustomers { get; set; }
         public ICollection<Permissions> Permissions { get; set; }
     }
+    // DTO cho request
+    public class RoleCreateModel
+    {
+        public string Name { get; set; }
+        public string RoleType { get; set; }
+        public List<PermissionModel> Permissions { get; set; }
+    }
+    public class RoleUpdateModel
+    {
+        public int Id { get; set; }
+        public string Name { get; set; }
+        public string RoleType { get; set; }
+        public List<PermissionModel> Permissions { get; set; }
+    }
+    public class PermissionModel
+    {
+        public int ModuleId { get; set; }
+        public int PermissionValue { get; set; }
+    }
 }

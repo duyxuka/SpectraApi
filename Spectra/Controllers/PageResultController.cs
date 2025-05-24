@@ -943,7 +943,6 @@ namespace Spectra.Controllers
                         PageIndex = currentPage,
                         PageSize = pagesize,
                         Items = query
-                            .OrderByDescending(x => x.CreatedDate)
                             .Skip((currentPage - 1) * pagesize)
                             .Take(pagesize)
                             .Join(context.Category, ai => ai.CategoryId, al => al.Id, (ai, al) => new { ai, al })

@@ -51,11 +51,9 @@ namespace Spectra.Controllers
                         Id = x.gt.ai.Id,
                         Code = x.gt.ai.Code,
                         Name = x.gt.ai.Name,
-                        WarrantyMonth = x.gt.ai.WarrantyMonth,
                         Price = x.gt.ai.Price,
                         SalePrice = x.gt.ai.SalePrice,
                         Images = x.gt.ai.Images,
-                        JobId = x.gt.ai.JobId,
                         CategoryId = x.gt.ai.CategoryId,
                         Option = x.gt.ai.Option,
                         GiftId = x.gt.ai.GiftId,
@@ -220,7 +218,6 @@ namespace Spectra.Controllers
                     PageIndex = page ?? 1,
                     PageSize = pagesize,
                     Items = query
-                        .OrderByDescending(x => x.gt.ai.CreatedDate) // Thay đổi phương thức sắp xếp nếu cần thiết
                         .Skip((page - 1 ?? 0) * pagesize)
                         .Take(pagesize)
                         .Select(x => new ProductDisplay
@@ -273,7 +270,6 @@ namespace Spectra.Controllers
                     PageIndex = page ?? 1,
                     PageSize = pagesize,
                     Items = query
-                        .OrderByDescending(x => x.gt.ai.CreatedDate)
                         .Skip((page - 1 ?? 0) * pagesize)
                         .Take(pagesize)
                         .Select(x => new ProductDisplay
@@ -325,7 +321,6 @@ namespace Spectra.Controllers
                     PageIndex = page ?? 1,
                     PageSize = pagesize,
                     Items = query
-                        .OrderByDescending(x => x.gt.ai.CreatedDate) // Adjust the sorting method as needed
                         .Skip((page - 1 ?? 0) * pagesize)
                         .Take(pagesize)
                         .Select(x => new ProductDisplay
@@ -379,7 +374,6 @@ namespace Spectra.Controllers
                     PageIndex = page ?? 1,
                     PageSize = pagesize,
                     Items = query
-                        .OrderByDescending(x => x.gt.ai.CreatedDate) // Thay đổi phương thức sắp xếp nếu cần thiết
                         .Skip((page - 1 ?? 0) * pagesize)
                         .Take(pagesize)
                         .Select(x => new ProductDisplay

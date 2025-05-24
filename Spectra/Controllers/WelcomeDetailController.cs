@@ -46,12 +46,8 @@ namespace Spectra.Controllers
                             Code = ai.Code,
                             Image = ai.Image,
                             WelcomeId = ai.WelcomeId,
-                            Description = ai.Description,
                             Status = ai.Status,
                             CateWelName = al.Name,
-                            TitleSeo = ai.TitleSeo,
-                            MetaKeyWords = ai.MetaKeyWords,
-                            MetaDescription = ai.MetaDescription,
                             CreatedDate = ai.CreatedDate,
                             LinkName = rgx.Replace(ai.Name, "-").ToLower()
                         })
@@ -64,11 +60,7 @@ namespace Spectra.Controllers
                             Image = x.Image,
                             WelcomeId = x.WelcomeId,
                             CateWelName = x.CateWelName,
-                            TitleSeo = x.TitleSeo,
-                            MetaKeyWords = x.MetaKeyWords,
-                            MetaDescription = x.MetaDescription,
                             CreatedDate = x.CreatedDate,
-                            Description = x.Description,
                             Status = x.Status,
                             LinkName = rgx.Replace(x.Name, "-").ToLower()
                         })

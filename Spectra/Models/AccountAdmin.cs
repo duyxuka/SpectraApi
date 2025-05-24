@@ -26,9 +26,11 @@ namespace Spectra.Models
         public DateTime CreatedDate { get; set; }
         public DateTime ModifiedDate { get; set; }
         public ICollection<UserRoleAdmin> UserRoleAdmins { get; set; }
+        public ICollection<AccountPermissions> AccountPermissions { get; set; }
     }
     public class AdminDTO : AccountAdmin
     {
         public List<string> RoleNames { get; set; }
+        public Dictionary<string, int> AccountPermissions { get; set; }
     }
 }

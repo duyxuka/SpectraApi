@@ -57,6 +57,27 @@ namespace Spectra.Migrations
                     b.ToTable("Spectra_AccountAdmin");
                 });
 
+            modelBuilder.Entity("Spectra.Models.AccountPermissions", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasAnnotation("SqlServer:ValueGenerationStrategy", SqlServerValueGenerationStrategy.IdentityColumn);
+
+                    b.Property<int>("AccountAdminId");
+
+                    b.Property<int>("ModulesId");
+
+                    b.Property<int>("PermissionValue");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("AccountAdminId");
+
+                    b.HasIndex("ModulesId");
+
+                    b.ToTable("Spectra_AccountPermissions");
+                });
+
             modelBuilder.Entity("Spectra.Models.AccountUser", b =>
                 {
                     b.Property<int>("Id")
@@ -70,8 +91,6 @@ namespace Spectra.Migrations
 
                     b.Property<string>("Email")
                         .IsRequired();
-
-                    b.Property<bool?>("Gender");
 
                     b.Property<DateTime>("ModifiedDate");
 
@@ -1106,6 +1125,8 @@ namespace Spectra.Migrations
 
                     b.Property<DateTime>("CreatedDate");
 
+                    b.Property<string>("JobId");
+
                     b.Property<DateTime>("ModifiedDate");
 
                     b.Property<float>("Price");
@@ -1782,6 +1803,19 @@ namespace Spectra.Migrations
                     b.HasIndex("WelcomeId");
 
                     b.ToTable("Spectra_WelcomeDetail");
+                });
+
+            modelBuilder.Entity("Spectra.Models.AccountPermissions", b =>
+                {
+                    b.HasOne("Spectra.Models.AccountAdmin", "AccountAdmin")
+                        .WithMany("AccountPermissions")
+                        .HasForeignKey("AccountAdminId")
+                        .OnDelete(DeleteBehavior.Cascade);
+
+                    b.HasOne("Spectra.Models.Modules", "Modules")
+                        .WithMany()
+                        .HasForeignKey("ModulesId")
+                        .OnDelete(DeleteBehavior.Cascade);
                 });
 
             modelBuilder.Entity("Spectra.Models.Application", b =>
