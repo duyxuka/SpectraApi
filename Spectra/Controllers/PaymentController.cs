@@ -10,7 +10,7 @@ using Spectra.Services;
 
 namespace Spectra.Controllers
 {
-    //[EnableCors("AddCorsIPN")]
+    [EnableCors("AddCorsIPN")]
     [Route("api/[controller]")]
     [ApiController]
     public class PaymentController : ControllerBase

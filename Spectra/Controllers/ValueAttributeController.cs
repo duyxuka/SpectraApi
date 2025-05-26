@@ -8,6 +8,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Spectra.Models;
+using Spectra.Models.Authorize;
 
 namespace Spectra.Controllers
 {
@@ -26,7 +27,7 @@ namespace Spectra.Controllers
 
         // GET: api/ValueAttribute
         [HttpGet]
-        [AllowAnonymous]
+        [BinaryAuthorize("Product", ActionType.Xem)]
         public IEnumerable<ValueAttribute> GetValueAttributes()
         {
             var data = _context.ValueAttributes.Join(_context.Attributes, ai => ai.AttributeId,
@@ -45,7 +46,7 @@ namespace Spectra.Controllers
 
         // GET: api/ValueAttribute/5
         [HttpGet("{id}")]
-        [AllowAnonymous]
+        [BinaryAuthorize("Product", ActionType.Xem)]
         public async Task<IActionResult> GetValueAttribute([FromRoute] int? id)
         {
             if (!ModelState.IsValid)
@@ -66,6 +67,7 @@ namespace Spectra.Controllers
         // PUT: api/ValueAttribute/5
         [HttpPost]
         [Route("PutValueAttribute")]
+        [BinaryAuthorize("Product", ActionType.Sua)]
         public async Task<IActionResult> PutValueAttribute([FromBody] ValueAttribute valueAttribute)
         {
             if (!ModelState.IsValid)
@@ -90,6 +92,7 @@ namespace Spectra.Controllers
 
         // POST: api/ValueAttribute
         [HttpPost]
+        [BinaryAuthorize("Product", ActionType.Them)]
         public async Task<IActionResult> PostValueAttribute([FromBody] ValueAttribute valueAttribute)
         {
             if (!ModelState.IsValid)
@@ -106,6 +109,7 @@ namespace Spectra.Controllers
 
         // DELETE: api/ValueAttribute/5
         [HttpDelete("{id}")]
+        [BinaryAuthorize("Product", ActionType.Xoa)]
         public async Task<IActionResult> DeleteValueAttribute([FromRoute] int? id)
         {
             if (!ModelState.IsValid)

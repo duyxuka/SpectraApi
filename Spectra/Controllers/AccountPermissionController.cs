@@ -2,6 +2,8 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Cors;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -10,8 +12,10 @@ using Spectra.Models.Authorize;
 
 namespace Spectra.Controllers
 {
+    [EnableCors("AddCors")]
     [Route("api/[controller]")]
     [ApiController]
+    [Authorize]
     public class AccountPermissionController : ControllerBase
     {
         private readonly AppDBContext _context;
@@ -23,7 +27,7 @@ namespace Spectra.Controllers
 
         // GET: api/AccountPermission
         [HttpGet]
-        [BinaryAuthorize("Admin", ActionType.Sua)]
+        [BinaryAuthorize("Admin", ActionType.Xem)]
         public IEnumerable<AccountPermissions> GetAccountPermissions()
         {
             return _context.AccountPermissions;
@@ -31,6 +35,7 @@ namespace Spectra.Controllers
 
         // GET: api/AccountPermission/5
         [HttpGet("{id}")]
+        [BinaryAuthorize("Admin", ActionType.Xem)]
         public async Task<IActionResult> GetAccountPermissions([FromRoute] int id)
         {
             if (!ModelState.IsValid)
@@ -47,7 +52,11 @@ namespace Spectra.Controllers
 
             return Ok(accountPermissions);
         }
-        [HttpPost("assign-account-permission")]
+
+
+        [HttpPost]
+        [Route("assign-account-permission")]
+        [BinaryAuthorize("Admin", ActionType.Them)]
         public async Task<IActionResult> AssignAccountPermission([FromBody] List<AccountPermissions> models)
         {
             if (models == null || !models.Any())
@@ -111,6 +120,8 @@ namespace Spectra.Controllers
         }
         // PUT: api/AccountPermission/5
         [HttpPost]
+        [Route("PutAccountPermission")]
+        [BinaryAuthorize("Admin", ActionType.Sua)]
         public async Task<IActionResult> PutAccountPermissions([FromBody] AccountPermissions accountPermissions)
         {
             if (!ModelState.IsValid)
@@ -134,6 +145,7 @@ namespace Spectra.Controllers
 
         // POST: api/AccountPermission
         [HttpPost]
+        [BinaryAuthorize("Admin", ActionType.Them)]
         public async Task<IActionResult> PostAccountPermissions([FromBody] AccountPermissions accountPermissions)
         {
             if (!ModelState.IsValid)
@@ -149,6 +161,7 @@ namespace Spectra.Controllers
 
         // DELETE: api/AccountPermission/5
         [HttpDelete("{id}")]
+        [BinaryAuthorize("Admin", ActionType.Xoa)]
         public async Task<IActionResult> DeleteAccountPermissions([FromRoute] int id)
         {
             if (!ModelState.IsValid)

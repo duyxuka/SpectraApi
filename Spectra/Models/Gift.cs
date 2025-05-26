@@ -28,7 +28,6 @@ namespace Spectra.Models
         public DateTime ModifiedDate { get; set; }
         [DefaultValue(null)]
         public ICollection<Product> Products { get; set; }
-        public ICollection<Item> Items { get; set; }
 
     }
 }

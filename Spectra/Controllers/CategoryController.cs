@@ -67,49 +67,7 @@ namespace Spectra.Controllers
                 // Log the exception or handle it accordingly
                 return Enumerable.Empty<Category>();
             }
-        }
-
-        [HttpGet]
-        [AllowAnonymous]
-        [Route("CategoryBH")]
-        public IEnumerable<Category> GetCategoryBH()
-        {
-            string pattern = "[ ,+(){}.*+?^$|]";
-            Regex rgx = new Regex(pattern);
-
-            try
-            {
-                var data = _context.Category
-                    .AsNoTracking() // Tối ưu hóa để không theo dõi các đối tượng
-                    .Where(x => x.Option == true)
-                    .Select(x => new CategoryProductDisplay
-                    {
-                        Id = x.Id,
-                        Code = x.Code,
-                        Name = x.Name,
-                        Status = x.Status,
-                        Image = x.Image,
-                        Title = x.Title,
-                        TitleSeo = x.TitleSeo,
-                        Option = x.Option,
-                        MetaKeyWords = x.MetaKeyWords,
-                        MetaDescription = x.MetaDescription,
-                        Description = x.Description,
-                        CreatedDate = x.CreatedDate,
-                        ModifiedDate = x.ModifiedDate,
-                        LinkName = rgx.Replace(x.Name, "-").ToLower()
-                    })
-                    .ToList();
-
-                return data;
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"Error retrieving categories: {ex.Message}");
-                // Log the exception or handle it accordingly
-                return Enumerable.Empty<Category>();
-            }
-        }
+        } 
 
         // GET: api/Category/5
         [HttpGet("{id}")]
@@ -163,70 +121,10 @@ namespace Spectra.Controllers
             }
         }
 
-
-        [HttpGet]
-        [Route("TrashCategory")]
-        [BinaryAuthorize("Category", ActionType.Xoa)]
-        public IEnumerable<Category> GetTrashCategoryProducts()
-        {
-            return _context.Category.Where(b => b.Status == false);
-        }
-
-        [HttpPost]
-        [Route("RepeatCategory")]
-        [BinaryAuthorize("Category", ActionType.Xoa)]
-        public async Task<IActionResult> RepeatCategoryProduct([FromBody] Category categoryProduct)
-        {
-            if (!ModelState.IsValid)
-            {
-                return BadRequest(ModelState);
-            }
-
-            _context.Entry(categoryProduct).State = EntityState.Modified;
-
-            try
-            {
-                categoryProduct.Status = true;
-                categoryProduct.ModifiedDate = DateTime.Now;
-                await _context.SaveChangesAsync();
-            }
-            catch (DbUpdateConcurrencyException)
-            {
-
-            }
-
-            return NoContent();
-        }
-        [HttpPost]
-        [Route("TemporaryDelete")]
-        [BinaryAuthorize("Category", ActionType.Xoa)]
-        public async Task<IActionResult> TemporaryDelete([FromBody] Category categoryProduct)
-        {
-            if (!ModelState.IsValid)
-            {
-                return BadRequest(ModelState);
-            }
-
-            _context.Entry(categoryProduct).State = EntityState.Modified;
-
-            try
-            {
-                categoryProduct.Status = false;
-                //categoryProduct.ModifiedDate = DateTime.Now;
-                await _context.SaveChangesAsync();
-            }
-            catch (DbUpdateConcurrencyException)
-            {
-
-            }
-
-            return NoContent();
-        }
-
         // PUT: api/Category/5
         [HttpPost]
         [Route("PutCategory")]
-        //[BinaryAuthorize("Category", ActionType.Sua)]
+        [BinaryAuthorize("CategoryProduct", ActionType.Sua)]
         public async Task<IActionResult> PutCategoryProduct([FromBody] Category categoryProduct)
         {
             if (!ModelState.IsValid)
@@ -252,7 +150,7 @@ namespace Spectra.Controllers
 
         // POST: api/Category
         [HttpPost]
-        //[BinaryAuthorize("Category", ActionType.Them)]
+        [BinaryAuthorize("CategoryProduct", ActionType.Them)]
         public async Task<IActionResult> PostCategory([FromBody] Category category)
         {
             if (!ModelState.IsValid)
@@ -268,7 +166,7 @@ namespace Spectra.Controllers
 
         // DELETE: api/Category/5
         [HttpDelete("{id}")]
-        //[BinaryAuthorize("Category", ActionType.Xoa)]
+        [BinaryAuthorize("CategoryProduct", ActionType.Xoa)]
         public async Task<IActionResult> DeleteCategory([FromRoute] int? id)
         {
             if (!ModelState.IsValid)

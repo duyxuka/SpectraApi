@@ -64,7 +64,8 @@ namespace Spectra
 
                 });
 
-            services.AddSwaggerGen(c => {
+            services.AddSwaggerGen(c =>
+            {
                 c.SwaggerDoc("v1", new OpenApiInfo { Title = "Spectra", Version = "1.0" });
                 c.AddSecurityDefinition("bearerAuth", new OpenApiSecurityScheme
                 {
@@ -72,8 +73,8 @@ namespace Spectra
                     Type = SecuritySchemeType.Http,
                     Scheme = "bearer",
                     BearerFormat = "JWT",
-                    In = ParameterLocation.Path,
-                    Description = "JWT Authorization header using the bearer scheme",
+                    In = ParameterLocation.Header, // Sửa từ Path thành Header
+                    Description = "JWT Authorization header using the Bearer scheme. Example: 'Bearer {token}'",
                 });
 
                 c.AddSecurityRequirement(new OpenApiSecurityRequirement
@@ -81,18 +82,18 @@ namespace Spectra
                     {
                         new OpenApiSecurityScheme
                         {
-                            Reference= new OpenApiReference
+                            Reference = new OpenApiReference
                             {
                                 Type = ReferenceType.SecurityScheme,
                                 Id = "bearerAuth",
                             }
                         },
-                        new string[]{}
+                        new string[] {}
                     }
                 });
             });
 
-            services.AddCors(c => c.AddPolicy("AddCors", builder => builder.WithOrigins("https://spectrababy.com.vn", "https://spectra.vn", "https://admin.spectrababy.com.vn", "https://spectrababy.vn", "https://spectra.com.vn", "https://adicon.vn", "http://localhost:4200", "http://localhost:64347").AllowAnyHeader().AllowAnyMethod().AllowCredentials()));
+            services.AddCors(c => c.AddPolicy("AddCors", builder => builder.WithOrigins("https://spectrababy.com.vn", "https://spectra.vn", "https://admin.spectrababy.com.vn", "https://spectrababy.vn", "https://spectra.com.vn", "https://adicon.vn", "http://localhost:4200", "http://localhost:55542").AllowAnyHeader().AllowAnyMethod().AllowCredentials()));
             services.AddCors(c => c.AddPolicy("AddCorsIPN", builder => builder.SetIsOriginAllowed(origin =>
             {
                  //Convert domain to IP 

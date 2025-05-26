@@ -12,13 +12,14 @@ using Spectra.Services;
 using Microsoft.AspNetCore.Cors;
 using System.Text.RegularExpressions;
 using Spectra.Models.Authorize;
+using Newtonsoft.Json;
 
 namespace Spectra.Controllers
 {
     [EnableCors("AddCors")]
     [Route("api/[controller]")]
     [ApiController]
-    //[Authorize]
+    [Authorize]
     public class OrderController : ControllerBase
     {
         private readonly AppDBContext _context;
@@ -31,7 +32,7 @@ namespace Spectra.Controllers
 
         // GET: api/Order
         [HttpGet]
-        //[BinaryAuthorize("Order", ActionType.Xem)]
+        [BinaryAuthorize("OrderManager", ActionType.Xem)]
         public IEnumerable<Order> GetOrder(int website)
         {
             return _context.Order
@@ -44,7 +45,7 @@ namespace Spectra.Controllers
         // New Dashboard API
         [HttpGet]
         [Route("Dashboard")]
-        [AllowAnonymous]
+        [BinaryAuthorize("Dashboard", ActionType.Xem)]
         public async Task<IActionResult> GetOrderDashboard()
         {
             try
@@ -185,7 +186,7 @@ namespace Spectra.Controllers
 
         [HttpGet]
         [Route("GetOrderWithWebsite")]
-        [AllowAnonymous]
+        [BinaryAuthorize("OrderManager", ActionType.Xem)]
         public async Task<IActionResult> GetPagedOrdersByWebsiteAsync(int website, int? page, int pagesize = 5)
         {
             try
@@ -225,8 +226,7 @@ namespace Spectra.Controllers
         // GET: api/Order/OrderWithDetails/5
         [HttpGet]
         [Route("OrderWithDetails/{id}")]
-        [AllowAnonymous]
-        //[BinaryAuthorize("Order", ActionType.Xem)]
+        [BinaryAuthorize("OrderManager", ActionType.Xem)]
         public async Task<IActionResult> GetOrderWithDetails([FromRoute] int? id)
         {
             if (!ModelState.IsValid)
@@ -290,18 +290,9 @@ namespace Spectra.Controllers
             }
         }
 
-        // GET: api/Order/5
-        [HttpGet]
-        [Route("orderReturn")]
-        [AllowAnonymous]
-        public IEnumerable<Order> GetOrdersReturn()
-        {
-            return _context.Order.OrderByDescending(x => x.Id).Where(x => x.Status == 6);
-        }
         [HttpGet]
         [Route("orderSuccess")]
-        //[BinaryAuthorize("Order", ActionType.Xem)]
-        [AllowAnonymous]
+        [BinaryAuthorize("Order", ActionType.Xem)]
         public async Task<IActionResult> GetOrderAccountSS([FromQuery] int? id)
         {
             if (!ModelState.IsValid)
@@ -312,6 +303,19 @@ namespace Spectra.Controllers
             if (id == null)
             {
                 return BadRequest("AccountUserId is required.");
+            }
+
+            var userIdClaim = User.FindFirst("UserId")?.Value;
+            if (string.IsNullOrEmpty(userIdClaim) || !int.TryParse(userIdClaim, out var userId))
+            {
+                return Unauthorized();
+            }
+
+            // Kiểm tra nếu là Admin thì bỏ qua kiểm tra AccountUserId
+            bool isAdmin = HasPermission("OrderManager", 1); // 1 = View
+            if (!isAdmin && userId != id)
+            {
+                return Forbid("Bạn chỉ có thể xem đơn hàng của chính mình.");
             }
 
             var orders = await _context.Order
@@ -328,57 +332,52 @@ namespace Spectra.Controllers
             });
         }
 
-        [HttpGet]
-        [Route("OrderHistory/{name}")]
-        [AllowAnonymous]
-        public async Task<IActionResult> GetOrdersSuccess(string name)
-        {
-            if (!ModelState.IsValid)
-            {
-                return BadRequest(ModelState);
-            }
-            var order = await _context.Order.Where(x => x.Status == 3 && x.Name.Equals(name)).ToListAsync();
-            if (order == null)
-            {
-                return NotFound();
-            }
-            return Ok(order);
-        }
-        [HttpGet]
-        [Route("GetAllOrders/{name}")]
-        [AllowAnonymous]
-        public IEnumerable<Order> GetOrders(string name)
-        {
-            var order = _context.Order.Where(x => x.Name.Equals(name)).ToList();
-            return order;
-        }
+
         [HttpGet]
         [Route("OrderAcc")]
-        //[BinaryAuthorize("Order", ActionType.Xem)]
+        [BinaryAuthorize("Order", ActionType.Xem)]
         public async Task<IActionResult> GetOrderAccount([FromQuery] int? id)
         {
             if (!ModelState.IsValid)
             {
                 return BadRequest(ModelState);
             }
-            var data = await _context.Order.Join(_context.AccountUsers, ac => ac.AccountUserId,
-              ae => ae.Id, (ac, ae) => new { ac, ae }).Where(x => x.ac.AccountUserId == id).Select(x => new Order
-              {
-                  Id = x.ac.Id,
-                  Code = x.ac.Code,
-                  AccountUserId = x.ac.AccountUserId,
-                  TotalAmount = x.ac.TotalAmount,
-                  TotalQuantity = x.ac.TotalQuantity,
-                  Status = x.ac.Status,
-                  PaymentMethod = x.ac.PaymentMethod,
-                  CreatedDate = x.ac.CreatedDate,
-                  ModifiedDate = x.ac.ModifiedDate,
-              }).OrderByDescending(x => x.Id).ToListAsync();
+
+            var userIdClaim = User.FindFirst("UserId")?.Value;
+            if (string.IsNullOrEmpty(userIdClaim) || !int.TryParse(userIdClaim, out var userId))
+            {
+                return Unauthorized();
+            }
+
+            bool isAdmin = HasPermission("OrderManager", 1); // 1 = View
+            if (!isAdmin && userId != id)
+            {
+                return Forbid("Bạn chỉ có thể xem đơn hàng của chính mình.");
+            }
+
+            var data = await _context.Order
+                .Join(_context.AccountUsers, ac => ac.AccountUserId, ae => ae.Id, (ac, ae) => new { ac, ae })
+                .Where(x => x.ac.AccountUserId == id)
+                .Select(x => new Order
+                {
+                    Id = x.ac.Id,
+                    Code = x.ac.Code,
+                    AccountUserId = x.ac.AccountUserId,
+                    TotalAmount = x.ac.TotalAmount,
+                    TotalQuantity = x.ac.TotalQuantity,
+                    Status = x.ac.Status,
+                    PaymentMethod = x.ac.PaymentMethod,
+                    CreatedDate = x.ac.CreatedDate,
+                    ModifiedDate = x.ac.ModifiedDate,
+                })
+                .OrderByDescending(x => x.Id)
+                .ToListAsync();
+
             return Ok(data);
         }
         // GET: api/Orders/5
         [HttpGet("{id}")]
-        //[BinaryAuthorize("Order", ActionType.Xem)]
+        [BinaryAuthorize("Order", ActionType.Xem)]
         public async Task<IActionResult> GetOrder([FromRoute] int? id)
         {
             if (!ModelState.IsValid)
@@ -386,11 +385,22 @@ namespace Spectra.Controllers
                 return BadRequest(ModelState);
             }
 
-            var order = await _context.Order.Where(x => x.Id == id).FirstOrDefaultAsync();
+            var userIdClaim = User.FindFirst("UserId")?.Value;
+            if (string.IsNullOrEmpty(userIdClaim) || !int.TryParse(userIdClaim, out var userId))
+            {
+                return Unauthorized();
+            }
 
+            var order = await _context.Order.Where(x => x.Id == id).FirstOrDefaultAsync();
             if (order == null)
             {
                 return NotFound();
+            }
+
+            bool isAdmin = HasPermission("OrderManager", 1); // 1 = View
+            if (!isAdmin && order.AccountUserId != userId)
+            {
+                return Forbid("Bạn chỉ có thể xem đơn hàng của chính mình.");
             }
 
             return Ok(order);
@@ -399,7 +409,7 @@ namespace Spectra.Controllers
         // PUT: api/Orders/
         [HttpPost]
         [Route("PutOrder")]
-        //[BinaryAuthorize("Order", ActionType.Sua)]
+        [BinaryAuthorize("OrderManager", ActionType.Sua)]
         public async Task<IActionResult> PutOrder([FromBody] Order order)
         {
             if (!ModelState.IsValid)
@@ -422,10 +432,18 @@ namespace Spectra.Controllers
 
             return NoContent();
         }
+        private bool HasPermission(string module, int requiredPermission)
+        {
+            var permissionsClaim = User.FindFirst("Permissions")?.Value;
+            if (string.IsNullOrEmpty(permissionsClaim))
+                return false;
 
+            var permissions = JsonConvert.DeserializeObject<Dictionary<string, int>>(permissionsClaim);
+            return permissions.ContainsKey(module) && (permissions[module] & requiredPermission) == requiredPermission;
+        }
         // POST: api/Orders
         [HttpPost]
-        //[BinaryAuthorize("Order", ActionType.Them)]
+        [BinaryAuthorize("OrderManager", ActionType.Them)]
         public async Task<IActionResult> PostOrder([FromBody] Order order)
         {
             if (!ModelState.IsValid)
@@ -441,7 +459,7 @@ namespace Spectra.Controllers
 
         // DELETE: api/Order/5
         [HttpDelete("{id}")]
-        //[BinaryAuthorize("Order", ActionType.Xoa)]
+        [BinaryAuthorize("OrderManager", ActionType.Xoa)]
         public async Task<IActionResult> DeleteOrder([FromRoute] int? id)
         {
             if (!ModelState.IsValid)
@@ -460,60 +478,7 @@ namespace Spectra.Controllers
 
             return Ok(order);
         }
-        [HttpPost]
-        [Route("ProductQuantity")]
-        public async Task<IActionResult> ProductQuantity([FromBody] Order order)
-        {
-            if (!ModelState.IsValid)
-            {
-                return BadRequest(ModelState);
-            }
-            var orderDetails = _context.OrderDetail
-         .Join(_context.Products, od => od.ProductId,
-               p => p.Id, (od, p) => new
-               {
-                   Id = od.Id,
-                   ProductId = od.ProductId,
-                   Quantity = od.Quantity,
-                   Price = od.Price,
-                   Status = od.Status,
-                   OrderId = od.OrderId,
-                   CreatedDate = od.CreatedDate,
-                   ModifiedDate = od.ModifiedDate,
-                   ProductCode = p.Code,
-                   ProductName = p.Name
-               }).Select(x => new DisplayOrderDetail()
-               {
-                   Id = x.Id,
-                   ProductId = x.ProductId,
-                   Quantity = x.Quantity,
-                   Price = x.Price,
-                   Status = x.Status,
-                   OrderId = x.OrderId,
-                   CreatedDate = x.CreatedDate,
-                   ModifiedDate = x.ModifiedDate,
-                   ProductCode = x.ProductCode,
-                   ProductName = x.ProductName
-               }).Where(x => x.OrderId == order.Id).ToList();
-            for (int i = 0; i < orderDetails.Count(); i++)
-            {
-                var product = _context.Products.Where(x => x.Id == orderDetails[i].ProductId).FirstOrDefault();
-                //product.Quantity = product.Quantity + orderDetails[i].Quantity;
-                _context.Entry(product).State = EntityState.Modified;
-            }
-
-            try
-            {
-                await _context.SaveChangesAsync();
-            }
-            catch (DbUpdateConcurrencyException)
-            {
-
-            }
-
-            return NoContent();
-        }
-
+        
         private bool OrderExists(int? id)
         {
             return _context.Order.Any(e => e.Id == id);

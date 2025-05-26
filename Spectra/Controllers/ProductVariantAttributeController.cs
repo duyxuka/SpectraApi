@@ -2,15 +2,20 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Cors;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Spectra.Models;
+using Spectra.Models.Authorize;
 
 namespace Spectra.Controllers
 {
+    [EnableCors("AddCors")]
     [Route("api/[controller]")]
     [ApiController]
+    [Authorize]
     public class ProductVariantAttributeController : ControllerBase
     {
         private readonly AppDBContext _context;
@@ -22,6 +27,7 @@ namespace Spectra.Controllers
 
         // GET: api/ProductVariantAttribute
         [HttpGet]
+        [BinaryAuthorize("Product", ActionType.Xem)]
         public IEnumerable<ProductVariantAttributes> GetProductVariantAttributes()
         {
             return _context.ProductVariantAttributes;
@@ -29,6 +35,7 @@ namespace Spectra.Controllers
 
         // GET: api/ProductVariantAttribute/5
         [HttpGet("{id}")]
+        [BinaryAuthorize("Product", ActionType.Xem)]
         public async Task<IActionResult> GetProductVariantAttributes([FromRoute] int id)
         {
             if (!ModelState.IsValid)
@@ -48,6 +55,7 @@ namespace Spectra.Controllers
 
         // PUT: api/ProductVariantAttribute/5
         [HttpPut("{id}")]
+        [BinaryAuthorize("Product", ActionType.Sua)]
         public async Task<IActionResult> PutProductVariantAttributes([FromRoute] int id, [FromBody] ProductVariantAttributes productVariantAttributes)
         {
             if (!ModelState.IsValid)
@@ -83,6 +91,7 @@ namespace Spectra.Controllers
 
         // POST: api/ProductVariantAttribute
         [HttpPost]
+        [BinaryAuthorize("Product", ActionType.Them)]
         public async Task<IActionResult> PostProductVariantAttributes([FromBody] ProductVariantAttributes productVariantAttributes)
         {
             if (!ModelState.IsValid)
@@ -98,6 +107,7 @@ namespace Spectra.Controllers
 
         // DELETE: api/ProductVariantAttribute/5
         [HttpDelete("{id}")]
+        [BinaryAuthorize("Product", ActionType.Xoa)]
         public async Task<IActionResult> DeleteProductVariantAttributes([FromRoute] int id)
         {
             if (!ModelState.IsValid)

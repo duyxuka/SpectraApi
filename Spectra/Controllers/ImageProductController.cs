@@ -8,13 +8,14 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Spectra.Models;
+using Spectra.Models.Authorize;
 
 namespace Spectra.Controllers
 {
     [EnableCors("AddCors")]
     [Route("api/[controller]")]
     [ApiController]
-    //[Authorize]
+    [Authorize]
     public class ImageProductController : ControllerBase
     {
         private readonly AppDBContext _context;
@@ -26,7 +27,7 @@ namespace Spectra.Controllers
 
         // GET: api/ImageProduct
         [HttpGet]
-        [AllowAnonymous]
+        [BinaryAuthorize("Product", ActionType.Xem)]
         public IEnumerable<ImageProduct> GetImageProducts()
         {
             var data = _context.ImageProducts.Join(_context.Products, ai => ai.ProductId,
@@ -45,7 +46,7 @@ namespace Spectra.Controllers
         }
         [HttpGet]
         [Route("Images")]
-        [AllowAnonymous]
+        [BinaryAuthorize("Product", ActionType.Xem)]
         public async Task<IActionResult> GetHomesUser()
         {
             var data = await _context.ImageProducts.Join(_context.Products, ai => ai.ProductId,
@@ -96,6 +97,7 @@ namespace Spectra.Controllers
         // PUT: api/ImageProduct/5
         [HttpPost]
         [Route("PutImageProduct")]
+        [BinaryAuthorize("Product", ActionType.Sua)]
         public async Task<IActionResult> PutImageProduct([FromBody] ImageProduct imageProduct)
         {
             if (!ModelState.IsValid)
@@ -121,6 +123,7 @@ namespace Spectra.Controllers
 
         // POST: api/ImageProduct
         [HttpPost]
+        [BinaryAuthorize("Product", ActionType.Them)]
         public async Task<IActionResult> PostImageProduct([FromBody] ImageProduct imageProduct)
         {
             if (!ModelState.IsValid)
@@ -136,6 +139,7 @@ namespace Spectra.Controllers
 
         // DELETE: api/ImageProduct/5
         [HttpDelete("{id}")]
+        [BinaryAuthorize("Product", ActionType.Xoa)]
         public async Task<IActionResult> DeleteImageProduct([FromRoute] int? id)
         {
             if (!ModelState.IsValid)

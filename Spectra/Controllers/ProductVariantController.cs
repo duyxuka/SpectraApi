@@ -4,16 +4,20 @@ using System.Linq;
 using System.Threading.Tasks;
 using Hangfire;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Cors;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Spectra.Models;
+using Spectra.Models.Authorize;
 using Spectra.Services;
 
 namespace Spectra.Controllers
 {
+    [EnableCors("AddCors")]
     [Route("api/[controller]")]
     [ApiController]
+    [Authorize]
     public class ProductVariantController : ControllerBase
     {
         private readonly AppDBContext _context;
@@ -27,6 +31,7 @@ namespace Spectra.Controllers
 
         // GET: api/ProductVariant
         [HttpGet]
+        [BinaryAuthorize("Product", ActionType.Xem)]
         public async Task<IActionResult> GetProductVariants()
         {
             try
@@ -65,8 +70,8 @@ namespace Spectra.Controllers
 
 
         // GET: api/ProductVariant/5
-        // GET: api/ProductVariant/5
         [HttpGet("{id}")]
+        [BinaryAuthorize("Product", ActionType.Xem)]
         public async Task<IActionResult> GetProductVariant(int id)
         {
             try
@@ -116,7 +121,7 @@ namespace Spectra.Controllers
         }
 
         [HttpPost("variantsschedule")]
-        [AllowAnonymous]
+        [BinaryAuthorize("Product", ActionType.Sua)]
         public async Task<IActionResult> ScheduleVariant([FromBody] ProductVariant productVariant)
         {
             if (!ModelState.IsValid)
@@ -168,6 +173,7 @@ namespace Spectra.Controllers
 
         [HttpPost]
         [Route("ProductVariantHangfireCancel")]
+        [BinaryAuthorize("Product", ActionType.Sua)]
         public IActionResult ItemHangfireCancel([FromBody] ProductVariant productVariant)
         {
             if (!ModelState.IsValid)
@@ -197,6 +203,7 @@ namespace Spectra.Controllers
 
         // PUT: api/ProductVariant/5
         [HttpPost("PutItem")]
+        [BinaryAuthorize("Product", ActionType.Sua)]
         public async Task<IActionResult> UpdateProductVariant([FromBody] ProductVariant variant)
         {
             if (!ModelState.IsValid)
@@ -236,6 +243,7 @@ namespace Spectra.Controllers
 
         // POST: api/ProductVariant
         [HttpPost]
+        [BinaryAuthorize("Product", ActionType.Them)]
         public async Task<IActionResult> PostProductVariant([FromBody] ProductVariant productVariant)
         {
             if (!ModelState.IsValid)
@@ -251,6 +259,7 @@ namespace Spectra.Controllers
 
         // DELETE: api/ProductVariant/5
         [HttpDelete("{id}")]
+        [BinaryAuthorize("Product", ActionType.Xoa)]
         public async Task<IActionResult> DeleteProductVariant([FromRoute] int id)
         {
             if (!ModelState.IsValid)

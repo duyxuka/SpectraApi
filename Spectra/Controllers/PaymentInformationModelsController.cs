@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Cors;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
@@ -13,6 +14,7 @@ namespace Spectra.Controllers
     [EnableCors("AddCors")]
     [Route("api/[controller]")]
     [ApiController]
+    [Authorize]
     public class PaymentInformationModelsController : ControllerBase
     {
         private readonly AppDBContext _context;
@@ -85,6 +87,7 @@ namespace Spectra.Controllers
 
         // POST: api/PaymentInformationModels
         [HttpPost]
+        [AllowAnonymous]
         public async Task<IActionResult> PostPaymentInformationModel([FromBody] PaymentInformationModel paymentInformationModel)
         {
             if (!ModelState.IsValid)

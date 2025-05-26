@@ -8,6 +8,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Spectra.Models;
+using Spectra.Models.Authorize;
 
 namespace Spectra.Controllers
 {
@@ -26,6 +27,7 @@ namespace Spectra.Controllers
 
         // GET: api/UserLanding
         [HttpGet]
+        [BinaryAuthorize("UserLanding", ActionType.Xem)]
         public IEnumerable<UserLanding> GetUserLandings()
         {
             return _context.UserLandings.Where(b => b.Status == true).OrderByDescending(x=> x.Id);
@@ -33,6 +35,7 @@ namespace Spectra.Controllers
 
         // GET: api/UserLanding/5
         [HttpGet("{id}")]
+        [BinaryAuthorize("UserLanding", ActionType.Xem)]
         public async Task<IActionResult> GetUserLanding([FromRoute] int? id)
         {
             if (!ModelState.IsValid)
@@ -50,65 +53,9 @@ namespace Spectra.Controllers
             return Ok(userLanding);
         }
 
-        [HttpGet]
-        [Route("TrashUserLanding")]
-        public IEnumerable<UserLanding> GetTrashUserLanding()
-        {
-            return _context.UserLandings.Where(b => b.Status == false);
-        }
-
-        [HttpPost]
-        [Route("RepeatUserLanding")]
-        public async Task<IActionResult> RepeatUserLanding([FromBody] UserLanding userLanding)
-        {
-            if (!ModelState.IsValid)
-            {
-                return BadRequest(ModelState);
-            }
-
-            _context.Entry(userLanding).State = EntityState.Modified;
-
-            try
-            {
-                userLanding.Status = true;
-                userLanding.ModifiedDate = DateTime.Now;
-                await _context.SaveChangesAsync();
-            }
-            catch (DbUpdateConcurrencyException)
-            {
-
-            }
-
-            return NoContent();
-        }
-
-        [HttpPost]
-        [Route("TemporaryDelete")]
-        public async Task<IActionResult> TemporaryDelete([FromBody] UserLanding userLanding)
-        {
-            if (!ModelState.IsValid)
-            {
-                return BadRequest(ModelState);
-            }
-
-            _context.Entry(userLanding).State = EntityState.Modified;
-
-            try
-            {
-                userLanding.Status = false;
-                //categoryProduct.ModifiedDate = DateTime.Now;
-                await _context.SaveChangesAsync();
-            }
-            catch (DbUpdateConcurrencyException)
-            {
-
-            }
-
-            return NoContent();
-        }
-
         // PUT: api/UserLanding/5
         [HttpPut("{id}")]
+        [BinaryAuthorize("UserLanding", ActionType.Sua)]
         public async Task<IActionResult> PutUserLanding([FromRoute] int? id, [FromBody] UserLanding userLanding)
         {
             if (!ModelState.IsValid)
@@ -163,6 +110,7 @@ namespace Spectra.Controllers
 
         // DELETE: api/UserLanding/5
         [HttpDelete("{id}")]
+        [BinaryAuthorize("UserLanding", ActionType.Xoa)]
         public async Task<IActionResult> DeleteUserLanding([FromRoute] int? id)
         {
             if (!ModelState.IsValid)

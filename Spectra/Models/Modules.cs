@@ -16,6 +16,7 @@ namespace Spectra.Models
         [Required]
         [MaxLength(100)]
         public string Name { get; set; } // Admin, Viewer, User
+        public string Description { get; set; }
         public ICollection<Permissions> Permissions { get; set; }
     }
 }

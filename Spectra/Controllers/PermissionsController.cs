@@ -3,13 +3,16 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Cors;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Spectra.Models;
+using Spectra.Models.Authorize;
 
 namespace Spectra.Controllers
 {
+    [EnableCors("AddCors")]
     [Route("api/[controller]")]
     [ApiController]
     [Authorize]
@@ -24,6 +27,7 @@ namespace Spectra.Controllers
 
         // GET: api/Permissions
         [HttpGet]
+        [BinaryAuthorize("Roles", ActionType.Xem)]
         public IEnumerable<Permissions> GetPermissions()
         {
             return _context.Permissions;
@@ -31,6 +35,7 @@ namespace Spectra.Controllers
 
         // GET: api/Permissions/5
         [HttpGet("{id}")]
+        [BinaryAuthorize("Roles", ActionType.Xem)]
         public async Task<IActionResult> GetPermissions([FromRoute] int id)
         {
             if (!ModelState.IsValid)
@@ -50,6 +55,7 @@ namespace Spectra.Controllers
 
         // PUT: api/Permissions/5
         [HttpPut("{id}")]
+        [BinaryAuthorize("Roles", ActionType.Sua)]
         public async Task<IActionResult> PutPermissions([FromRoute] int id, [FromBody] Permissions permissions)
         {
             if (!ModelState.IsValid)
@@ -85,6 +91,7 @@ namespace Spectra.Controllers
 
         // POST: api/Permissions
         [HttpPost]
+        [BinaryAuthorize("Roles", ActionType.Them)]
         public async Task<IActionResult> PostPermissions([FromBody] Permissions permissions)
         {
             if (!ModelState.IsValid)
@@ -99,6 +106,7 @@ namespace Spectra.Controllers
         }
 
         [HttpPost("SaveMultiple")]
+        [BinaryAuthorize("Roles", ActionType.Them)]
         public async Task<IActionResult> SaveMultiplePermissions([FromBody] List<Permissions> permissionsList)
         {
             foreach (var item in permissionsList)
@@ -123,6 +131,7 @@ namespace Spectra.Controllers
 
         // DELETE: api/Permissions/5
         [HttpDelete("{id}")]
+        [BinaryAuthorize("Roles", ActionType.Xoa)]
         public async Task<IActionResult> DeletePermissions([FromRoute] int id)
         {
             if (!ModelState.IsValid)

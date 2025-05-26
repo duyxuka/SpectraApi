@@ -8,6 +8,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Spectra.Models;
+using Spectra.Models.Authorize;
 
 namespace Spectra.Controllers
 {
@@ -26,7 +27,7 @@ namespace Spectra.Controllers
 
         // GET: api/RecruitmentSeo
         [HttpGet]
-        [AllowAnonymous]
+        [BinaryAuthorize("SEOPage", ActionType.Xem)]
         public IEnumerable<RecruitmentSeo> GetRecruitmentSeos()
         {
             return _context.RecruitmentSeos.AsNoTracking().OrderByDescending(x => x.Id).ToList(); 
@@ -51,7 +52,7 @@ namespace Spectra.Controllers
         }
         // GET: api/RecruitmentSeo/5
         [HttpGet("{id}")]
-        [AllowAnonymous]
+        [BinaryAuthorize("SEOPage", ActionType.Xem)]
         public async Task<IActionResult> GetRecruitmentSeo([FromRoute] int? id)
         {
             if (!ModelState.IsValid)
@@ -72,6 +73,7 @@ namespace Spectra.Controllers
         // PUT: api/RecruitmentSeo/5
         [HttpPost]
         [Route("PutRecruitment")]
+        [BinaryAuthorize("SEOPage", ActionType.Sua)]
         public async Task<IActionResult> PutRecruitmentSeo([FromBody] RecruitmentSeo recruitmentSeo)
         {
             if (!ModelState.IsValid)
@@ -96,6 +98,7 @@ namespace Spectra.Controllers
 
         // POST: api/RecruitmentSeo
         [HttpPost]
+        [BinaryAuthorize("SEOPage", ActionType.Them)]
         public async Task<IActionResult> PostRecruitmentSeo([FromBody] RecruitmentSeo recruitmentSeo)
         {
             if (!ModelState.IsValid)
@@ -113,6 +116,7 @@ namespace Spectra.Controllers
 
         // DELETE: api/RecruitmentSeo/5
         [HttpDelete("{id}")]
+        [BinaryAuthorize("SEOPage", ActionType.Xoa)]
         public async Task<IActionResult> DeleteRecruitmentSeo([FromRoute] int? id)
         {
             if (!ModelState.IsValid)

@@ -35,7 +35,7 @@ namespace Spectra.Controllers
 
         // GET: api/Warranties
         [HttpGet]
-        [AllowAnonymous]
+        [BinaryAuthorize("Warranty", ActionType.Xem)]
         public IEnumerable<Warranty> GetWarranties()
         {
             try
@@ -74,8 +74,7 @@ namespace Spectra.Controllers
 
         [HttpGet]
         [Route("WrantyPage")]
-        [AllowAnonymous]
-        //[BinaryAuthorize("Warranties", ActionType.Xem)]
+        [BinaryAuthorize("Warranty", ActionType.Xem)]
         public IActionResult WarrantyResult(int? page, int pagesize = 5)
         {
             string pattern = "[ ,+(){}.*+?^$|]";
@@ -131,8 +130,7 @@ namespace Spectra.Controllers
 
         [HttpGet]
         [Route("excel")]
-        [AllowAnonymous]
-        //[BinaryAuthorize("Warranties", ActionType.XuatFile)]
+        [BinaryAuthorize("Warranty", ActionType.XuatFile)]
         public async Task<FileResult> ExportExcel(string query = null, DateTime? startDate = null, DateTime? endDate = null)
         {
             var data = await _context.Warranties.ToListAsync();
@@ -412,6 +410,7 @@ namespace Spectra.Controllers
 
         [HttpPost]
         [Route("SendEmailWarrantyConfirm")]
+        [BinaryAuthorize("Warranty", ActionType.Sua)]
         public ActionResult SendEmailWarrantyConfirm([FromBody] Warranty warranty)
         {
             try
@@ -549,7 +548,7 @@ namespace Spectra.Controllers
         }
         // GET: api/Warranties/5
         [HttpGet("{id}")]
-        //[BinaryAuthorize("Warranties", ActionType.Xem)]
+        [BinaryAuthorize("Warranty", ActionType.Xem)]
         public async Task<IActionResult> GetWarranty([FromRoute] int? id)
         {
             if (!ModelState.IsValid)
@@ -570,7 +569,7 @@ namespace Spectra.Controllers
         // PUT: api/Warranties/5
         [HttpPost]
         [Route("PutWarranty")]
-        //[BinaryAuthorize("Warranties", ActionType.Sua)]
+        [BinaryAuthorize("Warranty", ActionType.Sua)]
         public async Task<IActionResult> PutWarranty([FromBody] Warranty warranty)
         {
             if (!ModelState.IsValid)
@@ -610,7 +609,7 @@ namespace Spectra.Controllers
 
         [HttpGet]
         [Route("WarrantiesLast6Months")]
-        [AllowAnonymous] // Or [Authorize] if you want to require authentication for this endpoint
+        [BinaryAuthorize("Dashboard", ActionType.Xem)]
         public async Task<ActionResult<IEnumerable<MonthlyWarrantyData>>> GetWarrantiesLast6Months()
         {
             try
@@ -675,7 +674,7 @@ namespace Spectra.Controllers
 
         // DELETE: api/Warranties/5
         [HttpDelete("{id}")]
-        //[BinaryAuthorize("Warranties", ActionType.Xoa)]
+        [BinaryAuthorize("Warranties", ActionType.Xoa)]
         public async Task<IActionResult> DeleteWarranty([FromRoute] int? id)
         {
             if (!ModelState.IsValid)

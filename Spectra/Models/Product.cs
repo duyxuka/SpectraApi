@@ -47,7 +47,6 @@ namespace Spectra.Models
         public DateTime Ends { get; set; }
         public ICollection<Feedback> Feedbacks { get; set; }
         public ICollection<Question> Questions { get; set; }
-        public ICollection<Item> Items { get; set; }
         public ICollection<SeriProduct> SeriProducts { get; set; }
         public ICollection<Voucher> Vouchers { get; set; }
         public ICollection<ProductVariant> ProductVariants { get; set; }

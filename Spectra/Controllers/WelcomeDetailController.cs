@@ -28,7 +28,7 @@ namespace Spectra.Controllers
 
         // GET: api/WelcomeDetail
         [HttpGet]
-        [AllowAnonymous]
+        [BinaryAuthorize("WelcomeDetail", ActionType.Xem)]
         public IEnumerable<WelcomeDetail> GetWelcomeDetails()
         {
             try
@@ -171,74 +171,11 @@ namespace Spectra.Controllers
             }
         }
 
-        [HttpGet]
-        [Route("getcategory/{id}")]
-        [AllowAnonymous]
-        public async Task<IActionResult> GetCategory([FromRoute] int? id)
-        {
-            try
-            {
-                if (!ModelState.IsValid)
-                {
-                    return BadRequest(ModelState);
-                }
-
-                string pattern = "[ ,+(){}.*+?^$|]";
-                Regex rgx = new Regex(pattern);
-
-                using (var context = _context) // Thay YourDbContext bằng tên thực của DbContext của bạn
-                {
-                    var data = await context.WelcomeDetails
-                        .Join(context.Welcomes, ai => ai.WelcomeId,
-                              al => al.Id, (ai, al) => new
-                              {
-                                  Id = ai.Id,
-                                  Name = ai.Name,
-                                  Code = ai.Code,
-                                  Image = ai.Image,
-                                  WelcomeId = ai.WelcomeId,
-                                  Description = ai.Description,
-                                  Status = ai.Status,
-                                  TitleSeo = ai.TitleSeo,
-                                  MetaKeyWords = ai.MetaKeyWords,
-                                  MetaDescription = ai.MetaDescription,
-                                  CreatedDate = ai.CreatedDate,
-                                  LinkName = rgx.Replace(ai.Name, "-").ToLower()
-                              })
-                        .Where(x => x.WelcomeId == id)
-                        .Select(x => new WelcomeDetailDisplay
-                        {
-                            Id = x.Id,
-                            Name = x.Name,
-                            Code = x.Code,
-                            Image = x.Image,
-                            WelcomeId = x.WelcomeId,
-                            TitleSeo = x.TitleSeo,
-                            MetaKeyWords = x.MetaKeyWords,
-                            MetaDescription = x.MetaDescription,
-                            CreatedDate = x.CreatedDate,
-                            Description = x.Description,
-                            Status = x.Status,
-                            LinkName = rgx.Replace(x.Name, "-").ToLower()
-                        })
-                        .Where(x => x.Status == true)
-                        .ToListAsync();
-
-                    return Ok(data);
-                }
-            }
-            catch (Exception ex)
-            {
-                // Xử lý ngoại lệ ở đây, ví dụ log lại hoặc trả về một thông báo lỗi phù hợp
-                Console.WriteLine($"Lỗi trong quá trình lấy danh sách chi tiết chào mừng: {ex.Message}");
-                throw; // Ném ngoại lệ để lớp điều khiển xử lý tiếp tục xử lý
-            }
-        }
 
         // PUT: api/WelcomeDetail/5
         [HttpPost]
         [Route("PutWelcomeDetail")]
-        //[BinaryAuthorize("WelcomeDetail", ActionType.Sua)]
+        [BinaryAuthorize("WelcomeDetail", ActionType.Sua)]
         public async Task<IActionResult> PutWelcomeDetail([FromBody] WelcomeDetail welcomeDetail)
         {
             if (!ModelState.IsValid)
@@ -264,7 +201,7 @@ namespace Spectra.Controllers
 
         // POST: api/WelcomeDetail
         [HttpPost]
-        //[BinaryAuthorize("WelcomeDetail", ActionType.Them)]
+        [BinaryAuthorize("WelcomeDetail", ActionType.Them)]
         public async Task<IActionResult> PostWelcomeDetail([FromBody] WelcomeDetail welcomeDetail)
         {
             if (!ModelState.IsValid)
@@ -281,7 +218,7 @@ namespace Spectra.Controllers
 
         // DELETE: api/WelcomeDetail/5
         [HttpDelete("{id}")]
-        //[BinaryAuthorize("WelcomeDetail", ActionType.Xoa)]
+        [BinaryAuthorize("WelcomeDetail", ActionType.Xoa)]
         public async Task<IActionResult> DeleteWelcomeDetail([FromRoute] int? id)
         {
             if (!ModelState.IsValid)

@@ -8,6 +8,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Spectra.Models;
+using Spectra.Models.Authorize;
 
 namespace Spectra.Controllers
 {
@@ -26,6 +27,7 @@ namespace Spectra.Controllers
 
         // GET: api/WarrantyGoldLog
         [HttpGet]
+        [BinaryAuthorize("WarrantyGold", ActionType.Xem)]
         public IEnumerable<WarrantyGoldLog> GetWarrantyGoldLogs()
         {
             return _context.WarrantyGoldLogs;
@@ -33,6 +35,7 @@ namespace Spectra.Controllers
 
         [HttpGet]
         [Route("getwarrantygold/{id}")]
+        [BinaryAuthorize("WarrantyGold", ActionType.Xem)]
         public async Task<IActionResult> GetWarrantyGold([FromRoute] int? id)
         {
             try
@@ -82,6 +85,7 @@ namespace Spectra.Controllers
 
         // GET: api/WarrantyGoldLog/5
         [HttpGet("{id}")]
+        [BinaryAuthorize("WarrantyGold", ActionType.Xem)]
         public async Task<IActionResult> GetWarrantyGoldLog([FromRoute] int? id)
         {
             if (!ModelState.IsValid)
@@ -101,6 +105,7 @@ namespace Spectra.Controllers
 
         // PUT: api/WarrantyGoldLog/5
         [HttpPut("{id}")]
+        [BinaryAuthorize("WarrantyGold", ActionType.Sua)]
         public async Task<IActionResult> PutWarrantyGoldLog([FromRoute] int? id, [FromBody] WarrantyGoldLog warrantyGoldLog)
         {
             if (!ModelState.IsValid)
@@ -136,6 +141,7 @@ namespace Spectra.Controllers
 
         // POST: api/WarrantyGoldLog
         [HttpPost]
+        [BinaryAuthorize("WarrantyGold", ActionType.Them)]
         public async Task<IActionResult> PostWarrantyGoldLog([FromBody] WarrantyGoldLog warrantyGoldLog)
         {
             if (!ModelState.IsValid)
@@ -151,6 +157,7 @@ namespace Spectra.Controllers
 
         // DELETE: api/WarrantyGoldLog/5
         [HttpDelete("{id}")]
+        [BinaryAuthorize("WarrantyGold", ActionType.Xoa)]
         public async Task<IActionResult> DeleteWarrantyGoldLog([FromRoute] int? id)
         {
             if (!ModelState.IsValid)

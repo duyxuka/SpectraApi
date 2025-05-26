@@ -8,6 +8,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Spectra.Models;
+using Spectra.Models.Authorize;
 
 namespace Spectra.Controllers
 {
@@ -26,7 +27,7 @@ namespace Spectra.Controllers
 
         // GET: api/ContactSeo
         [HttpGet]
-        [AllowAnonymous]
+        [BinaryAuthorize("SEOPage", ActionType.Xem)]
         public IEnumerable<ContactSeo> GetContactSeos()
         {
             return _context.ContactSeos.AsNoTracking().OrderByDescending(x => x.Id).ToList(); ;
@@ -51,7 +52,7 @@ namespace Spectra.Controllers
         }
         // GET: api/ContactSeo/5
         [HttpGet("{id}")]
-        [AllowAnonymous]
+        [BinaryAuthorize("SEOPage", ActionType.Xem)]
         public async Task<IActionResult> GetContactSeo([FromRoute] int? id)
         {
             if (!ModelState.IsValid)
@@ -72,6 +73,7 @@ namespace Spectra.Controllers
         // PUT: api/ContactSeo/5
         [HttpPost]
         [Route("PutContactSeo")]
+        [BinaryAuthorize("SEOPage", ActionType.Sua)]
         public async Task<IActionResult> PutContactSeo([FromBody] ContactSeo contactSeo)
         {
             if (!ModelState.IsValid)
@@ -96,6 +98,7 @@ namespace Spectra.Controllers
 
         // POST: api/ContactSeo
         [HttpPost]
+        [BinaryAuthorize("SEOPage", ActionType.Them)]
         public async Task<IActionResult> PostContactSeo([FromBody] ContactSeo contactSeo)
         {
             if (!ModelState.IsValid)
@@ -113,6 +116,7 @@ namespace Spectra.Controllers
 
         // DELETE: api/ContactSeo/5
         [HttpDelete("{id}")]
+        [BinaryAuthorize("SEOPage", ActionType.Xoa)]
         public async Task<IActionResult> DeleteContactSeo([FromRoute] int? id)
         {
             if (!ModelState.IsValid)

@@ -8,6 +8,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Spectra.Models;
+using Spectra.Models.Authorize;
 
 namespace Spectra.Controllers
 {
@@ -36,7 +37,6 @@ namespace Spectra.Controllers
                     Id = x.Id,
                     Name = x.Name,
                     Status = x.Status,
-                    Counties = x.Counties.ToList(),
                     CreatedDate = x.CreatedDate,
                     ModifiedDate = x.ModifiedDate
                 })
@@ -48,7 +48,8 @@ namespace Spectra.Controllers
 
         // GET: api/Cities/5
         [HttpGet("{id}")]
-        [AllowAnonymous]
+        [BinaryAuthorize("Location", ActionType.Xem)]
+        [BinaryAuthorize("SeriProduct", ActionType.Xem)]
         public async Task<IActionResult> GetCity([FromRoute] int? id)
         {
             if (!ModelState.IsValid)
@@ -69,6 +70,7 @@ namespace Spectra.Controllers
         // PUT: api/Cities/5
         [HttpPost]
         [Route("PutCities")]
+        [BinaryAuthorize("Admin", ActionType.Sua)]
         public async Task<IActionResult> PutCity([FromBody] City city)
         {
             if (!ModelState.IsValid)
@@ -93,6 +95,7 @@ namespace Spectra.Controllers
 
         // POST: api/Cities
         [HttpPost]
+        [BinaryAuthorize("Admin", ActionType.Them)]
         public async Task<IActionResult> PostCity([FromBody] City city)
         {
             if (!ModelState.IsValid)
@@ -108,6 +111,7 @@ namespace Spectra.Controllers
 
         // DELETE: api/Cities/5
         [HttpDelete("{id}")]
+        [BinaryAuthorize("Admin", ActionType.Xoa)]
         public async Task<IActionResult> DeleteCity([FromRoute] int? id)
         {
             if (!ModelState.IsValid)

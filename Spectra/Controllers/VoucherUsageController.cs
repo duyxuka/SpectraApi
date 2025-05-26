@@ -2,15 +2,20 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Cors;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Spectra.Models;
+using Spectra.Models.Authorize;
 
 namespace Spectra.Controllers
 {
+    [EnableCors("AddCors")]
     [Route("api/[controller]")]
     [ApiController]
+    [Authorize]
     public class VoucherUsageController : ControllerBase
     {
         private readonly AppDBContext _context;
@@ -22,6 +27,7 @@ namespace Spectra.Controllers
 
         // GET: api/VoucherUsage
         [HttpGet]
+        [AllowAnonymous]
         public IEnumerable<VoucherUsage> GetVoucherUsages()
         {
             return _context.VoucherUsages;
@@ -29,6 +35,7 @@ namespace Spectra.Controllers
 
         // GET: api/VoucherUsage/5
         [HttpGet("{id}")]
+        [BinaryAuthorize("Product", ActionType.Xem)]
         public async Task<IActionResult> GetVoucherUsage([FromRoute] int id)
         {
             if (!ModelState.IsValid)
@@ -48,6 +55,7 @@ namespace Spectra.Controllers
 
         [HttpPost]
         [Route("CheckUsage")]
+        [AllowAnonymous]
         public async Task<ActionResult<bool>> CheckVoucherUsage([FromBody] VoucherUsage request)
         {
             if (!ModelState.IsValid)
@@ -64,6 +72,7 @@ namespace Spectra.Controllers
         // PUT: api/VoucherUsage/5
         [HttpPost]
         [Route("PutVoucherUsage")]
+        [BinaryAuthorize("Product", ActionType.Sua)]
         public async Task<IActionResult> PutVoucherUsage([FromBody] VoucherUsage voucherUsage)
         {
             if (!ModelState.IsValid)
@@ -87,6 +96,7 @@ namespace Spectra.Controllers
 
         // POST: api/VoucherUsage
         [HttpPost]
+        [AllowAnonymous]
         public async Task<IActionResult> PostVoucherUsage([FromBody] VoucherUsage voucherUsage)
         {
             if (!ModelState.IsValid)
@@ -124,6 +134,7 @@ namespace Spectra.Controllers
 
         // DELETE: api/VoucherUsage/5
         [HttpDelete("{id}")]
+        [BinaryAuthorize("Product", ActionType.Xoa)]
         public async Task<IActionResult> DeleteVoucherUsage([FromRoute] int id)
         {
             if (!ModelState.IsValid)

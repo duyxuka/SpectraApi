@@ -3,13 +3,16 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Cors;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Spectra.Models;
+using Spectra.Models.Authorize;
 
 namespace Spectra.Controllers
 {
+    [EnableCors("AddCors")]
     [Route("api/[controller]")]
     [ApiController]
     [Authorize]
@@ -24,6 +27,7 @@ namespace Spectra.Controllers
 
         // GET: api/GiftUser
         [HttpGet]
+        [BinaryAuthorize("GiftUser", ActionType.Xem)]
         public IEnumerable<GiftUser> GetGiftUsers()
         {
             return _context.GiftUsers.Where(b => b.Status == true).OrderByDescending(x => x.Id);
@@ -31,6 +35,7 @@ namespace Spectra.Controllers
 
         // GET: api/GiftUser/5
         [HttpGet("{id}")]
+        [BinaryAuthorize("GiftUser", ActionType.Xem)]
         public async Task<IActionResult> GetGiftUser([FromRoute] int? id)
         {
             if (!ModelState.IsValid)
@@ -50,6 +55,7 @@ namespace Spectra.Controllers
 
         // PUT: api/GiftUser/5
         [HttpPut("{id}")]
+        [BinaryAuthorize("GiftUser", ActionType.Sua)]
         public async Task<IActionResult> PutGiftUser([FromRoute] int? id, [FromBody] GiftUser giftUser)
         {
             if (!ModelState.IsValid)
@@ -102,6 +108,7 @@ namespace Spectra.Controllers
 
         // DELETE: api/GiftUser/5
         [HttpDelete("{id}")]
+        [BinaryAuthorize("GiftUser", ActionType.Xoa)]
         public async Task<IActionResult> DeleteGiftUser([FromRoute] int? id)
         {
             if (!ModelState.IsValid)

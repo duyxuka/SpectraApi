@@ -3,16 +3,19 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Cors;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Spectra.Models;
+using Spectra.Models.Authorize;
 
 namespace Spectra.Controllers
 {
+    [EnableCors("AddCors")]
     [Route("api/[controller]")]
     [ApiController]
-    //[Authorize]
+    [Authorize]
     public class UserRoleAdminsController : ControllerBase
     {
         private readonly AppDBContext _context;
@@ -24,6 +27,7 @@ namespace Spectra.Controllers
 
         // GET: api/UserRoleAdmins
         [HttpGet]
+        [BinaryAuthorize("Roles", ActionType.Xem)]
         public IEnumerable<UserRoleAdmin> GetUserRoleAdmins()
         {
             return _context.UserRoleAdmins;
@@ -31,6 +35,7 @@ namespace Spectra.Controllers
 
         // GET: api/UserRoleAdmins/5
         [HttpGet("{id}")]
+        [BinaryAuthorize("Roles", ActionType.Xem)]
         public async Task<IActionResult> GetUserRoleAdmin([FromRoute] int id)
         {
             if (!ModelState.IsValid)
@@ -51,6 +56,7 @@ namespace Spectra.Controllers
         // PUT: api/UserRoleAdmins/5
         [HttpPut]
         [Route("PutUserRoleAdmin")]
+        [BinaryAuthorize("Roles", ActionType.Sua)]
         public async Task<IActionResult> PutUserRoleAdmin([FromBody] UserRoleAdminDto userRoleAdminDto)
         {
             if (!ModelState.IsValid)
@@ -108,6 +114,7 @@ namespace Spectra.Controllers
         // POST: api/UserRoleAdmins
         [HttpPost]
         [Route("PostUserRoleAdmin")]
+        [BinaryAuthorize("Roles", ActionType.Them)]
         public async Task<IActionResult> PostUserRoleAdmin([FromBody] UserRoleAdminDto userRoleAdminDto)
         {
             if (!ModelState.IsValid)
@@ -145,6 +152,7 @@ namespace Spectra.Controllers
 
         // DELETE: api/UserRoleAdmins/5
         [HttpDelete("{id}")]
+        [BinaryAuthorize("Roles", ActionType.Xoa)]
         public async Task<IActionResult> DeleteUserRoleAdmin([FromRoute] int id)
         {
             if (!ModelState.IsValid)

@@ -9,6 +9,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Spectra.Models;
+using Spectra.Models.Authorize;
 
 namespace Spectra.Controllers
 {
@@ -27,7 +28,7 @@ namespace Spectra.Controllers
 
         // GET: api/PolicyDetail
         [HttpGet]
-        [AllowAnonymous]
+        [BinaryAuthorize("Policy", ActionType.Xem)]
         public IEnumerable<PolicyDetail> GetPolicyDetails()
         {
             string pattern = "[ ,+(){}.*+?^$|]";
@@ -112,7 +113,7 @@ namespace Spectra.Controllers
 
         // GET: api/PolicyDetail/5
         [HttpGet("{id}")]
-        [AllowAnonymous]
+        [BinaryAuthorize("Policy", ActionType.Xem)]
         public async Task<IActionResult> GetPolicyDetail([FromRoute] int? id)
         {
             if (!ModelState.IsValid)
@@ -133,6 +134,7 @@ namespace Spectra.Controllers
         // PUT: api/PolicyDetail/5
         [HttpPost]
         [Route("PutPolicyDetail")]
+        [BinaryAuthorize("Policy", ActionType.Sua)]
         public async Task<IActionResult> PutPolicyDetail([FromBody] PolicyDetail policyDetail)
         {
 
@@ -174,6 +176,7 @@ namespace Spectra.Controllers
 
         // POST: api/PolicyDetail
         [HttpPost]
+        [BinaryAuthorize("Policy", ActionType.Them)]
         public async Task<IActionResult> PostPolicyDetail([FromBody] PolicyDetail policyDetail)
         {
 
@@ -203,6 +206,7 @@ namespace Spectra.Controllers
 
         // DELETE: api/PolicyDetail/5
         [HttpDelete("{id}")]
+        [BinaryAuthorize("Policy", ActionType.Xoa)]
         public async Task<IActionResult> DeletePolicyDetail([FromRoute] int? id)
         {
             if (!ModelState.IsValid)

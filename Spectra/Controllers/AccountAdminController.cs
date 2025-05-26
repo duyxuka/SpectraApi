@@ -37,7 +37,7 @@ namespace Spectra.Controllers
 
         // GET: api/AccountAdmin
         [HttpGet]
-        [AllowAnonymous]
+        [BinaryAuthorize("Admin", ActionType.Xem)]
         public async Task<IEnumerable<AdminDTO>> GetAccountAdmins()
         {
             var accounts = await (from ac in _context.AccountAdmins
@@ -185,6 +185,7 @@ namespace Spectra.Controllers
 
         // GET: api/AccountAdmin/5
         [HttpGet("{id}")]
+        [BinaryAuthorize("Admin", ActionType.Xem)]
         public async Task<IActionResult> GetAccountAdmin([FromRoute] int? id)
         {
             if (!ModelState.IsValid)
@@ -238,6 +239,7 @@ namespace Spectra.Controllers
 
         [HttpGet]
         [Route("GetPermissionsByRoles")]
+        [BinaryAuthorize("Admin", ActionType.Xem)]
         public async Task<IActionResult> GetPermissionsByRoles([FromQuery] int[] roleIds, [FromQuery] int? accountId = null)
         {
             if (roleIds == null || roleIds.Length == 0)
@@ -252,7 +254,8 @@ namespace Spectra.Controllers
                     .Select(m => new
                     {
                         m.Id,
-                        m.Name
+                        m.Name,
+                        m.Description
                     })
                     .ToListAsync();
 
@@ -294,6 +297,7 @@ namespace Spectra.Controllers
                 {
                     ModulesId = m.Id,
                     ModuleName = m.Name,
+                    Description = m.Description,
                     PermissionValue = allPermissions.FirstOrDefault(p => p.ModulesId == m.Id)?.PermissionValue ?? 0
                 }).ToList();
 
@@ -312,6 +316,7 @@ namespace Spectra.Controllers
         }
 
         [HttpPost("assign-account-permission")]
+        [BinaryAuthorize("Admin", ActionType.Sua)]
         public async Task<IActionResult> AssignAccountPermission([FromBody] AssignPermissionModel model)
         {
             if (!ModelState.IsValid)
@@ -395,6 +400,7 @@ namespace Spectra.Controllers
 
         [HttpPost]
         [Route("PutAccountAdmin")]
+        [BinaryAuthorize("Admin", ActionType.Sua)]
         public async Task<IActionResult> PutAccountAdmin([FromBody] PutAccountAdminModel model)
         {
             if (!ModelState.IsValid)
@@ -526,17 +532,32 @@ namespace Spectra.Controllers
 
         [HttpPost]
         [Route("PostAccountAdmin")]
-        [AllowAnonymous]
+        [BinaryAuthorize("Admin", ActionType.Them)]
         public async Task<IActionResult> PostAccountAdmin([FromBody] PostAccountAdminModel model)
         {
+            if (model == null || model.AccountAdmin == null)
+            {
+                return BadRequest(new { Message = "Dữ liệu gửi lên không hợp lệ." });
+            }
+
             if (!ModelState.IsValid)
             {
                 return BadRequest(ModelState);
             }
 
+            // Kiểm tra Code và Email
+            if (string.IsNullOrEmpty(model.AccountAdmin.Code))
+            {
+                return BadRequest(new { Message = "Mã tài khoản không được để trống." });
+            }
             if (_context.AccountAdmins.Any(a => a.Code == model.AccountAdmin.Code))
             {
                 return BadRequest(new { Message = "Mã tài khoản đã tồn tại." });
+            }
+
+            if (string.IsNullOrEmpty(model.AccountAdmin.Email))
+            {
+                return BadRequest(new { Message = "Email không được để trống." });
             }
             if (_context.AccountAdmins.Any(a => a.Email == model.AccountAdmin.Email))
             {
@@ -548,19 +569,36 @@ namespace Spectra.Controllers
             accountAdmin.ModifiedDate = DateTime.Now;
 
             // Tạo hash và salt cho mật khẩu
+            if (string.IsNullOrEmpty(accountAdmin.Password))
+            {
+                return BadRequest(new { Message = "Mật khẩu không được để trống." });
+            }
             PasswordHelper.CreatePasswordHash(accountAdmin.Password, out var passwordHash, out var passwordSalt);
             accountAdmin.PasswordHash = passwordHash;
             accountAdmin.PasswordSalt = passwordSalt;
             accountAdmin.Password = "null";
 
             _context.AccountAdmins.Add(accountAdmin);
-            await _context.SaveChangesAsync();
+            try
+            {
+                await _context.SaveChangesAsync();
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine("Error saving AccountAdmin: " + ex.Message);
+                return StatusCode(500, new { Message = "Lỗi khi lưu tài khoản: " + ex.Message });
+            }
 
             // Gán vai trò (nếu có)
             if (model.RoleIds != null && model.RoleIds.Any())
             {
                 foreach (var roleId in model.RoleIds)
                 {
+                    if (!_context.Roles.Any(r => r.Id == roleId))
+                    {
+                        return BadRequest(new { Message = $"Vai trò với ID {roleId} không tồn tại." });
+                    }
+
                     var userRole = new UserRoleAdmin
                     {
                         AccountAdminId = accountAdmin.Id,
@@ -568,40 +606,26 @@ namespace Spectra.Controllers
                     };
                     _context.UserRoleAdmins.Add(userRole);
                 }
-            }
 
-            // Gán quyền tài khoản (nếu có)
-            if (model.AccountPermissions != null && model.AccountPermissions.Any())
-            {
-                foreach (var perm in model.AccountPermissions)
+                try
                 {
-                    var permission = new AccountPermissions
-                    {
-                        AccountAdminId = accountAdmin.Id,
-                        ModulesId = perm.ModulesId,
-                        PermissionValue = perm.PermissionValue
-                    };
-                    _context.AccountPermissions.Add(permission);
+                    await _context.SaveChangesAsync();
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine("Error saving UserRoleAdmins: " + ex.Message);
+                    return StatusCode(500, new { Message = "Lỗi khi lưu vai trò: " + ex.Message });
                 }
             }
 
-            try
-            {
-                await _context.SaveChangesAsync();
-                return CreatedAtAction("GetAccountAdmin", new { id = accountAdmin.Id }, accountAdmin);
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine("Database Error: " + ex.Message);
-                return StatusCode(500, new { Message = "Lỗi khi lưu dữ liệu: " + ex.Message });
-            }
+            return CreatedAtAction("GetAccountAdmin", new { id = accountAdmin.Id }, accountAdmin);
         }
 
         public class PostAccountAdminModel
         {
             public AccountAdmin AccountAdmin { get; set; }
             public List<int> RoleIds { get; set; } = new List<int>();
-            public List<AccountPermissionModel> AccountPermissions { get; set; } = new List<AccountPermissionModel>();
+            //public List<AccountPermissionModel> AccountPermissions { get; set; } = new List<AccountPermissionModel>();
         }
 
         public class AccountPermissionModel
@@ -612,6 +636,7 @@ namespace Spectra.Controllers
 
         // DELETE: api/AccountAdmin/5
         [HttpDelete("{id}")]
+        [BinaryAuthorize("Admin", ActionType.Xoa)]
         public async Task<IActionResult> DeleteAccountAdmin([FromRoute] int? id)
         {
             if (!ModelState.IsValid)

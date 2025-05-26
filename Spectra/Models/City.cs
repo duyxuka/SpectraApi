@@ -18,7 +18,6 @@ namespace Spectra.Models
         public bool Status { get; set; }
         public DateTime CreatedDate { get; set; }
         public DateTime ModifiedDate { get; set; }
-        public ICollection<County> Counties { get; set; }
         public ICollection<SeriProduct> SeriProducts { get; set; }
     }
 }

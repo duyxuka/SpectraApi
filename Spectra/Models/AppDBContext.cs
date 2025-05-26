@@ -136,10 +136,6 @@ namespace Spectra.Models
             {
                 entity.Property(e => e.Id).ValueGeneratedOnAdd();
             });
-            modelBuilder.Entity<County>(entity =>
-            {
-                entity.Property(e => e.Id).ValueGeneratedOnAdd();
-            });
             modelBuilder.Entity<Location>(entity =>
             {
                 entity.Property(e => e.Id).ValueGeneratedOnAdd();
@@ -157,18 +153,6 @@ namespace Spectra.Models
                 entity.Property(e => e.Id).ValueGeneratedOnAdd();
             });
             modelBuilder.Entity<OrderDetail>(entity =>
-            {
-                entity.Property(e => e.Id).ValueGeneratedOnAdd();
-            });
-            modelBuilder.Entity<OrderCus>(entity =>
-            {
-                entity.Property(e => e.Id).ValueGeneratedOnAdd();
-            });
-            modelBuilder.Entity<OrderDetailCus>(entity =>
-            {
-                entity.Property(e => e.Id).ValueGeneratedOnAdd();
-            });
-            modelBuilder.Entity<Item>(entity =>
             {
                 entity.Property(e => e.Id).ValueGeneratedOnAdd();
             });
@@ -313,17 +297,13 @@ namespace Spectra.Models
         public DbSet<NewSeo> NewSeos { get; set; }
         public DbSet<Warranty> Warranties { get; set; }
         public DbSet<City> Cities { get; set; }
-        public DbSet<County> Counties { get; set; }
         public DbSet<Location> Locations { get; set; }
         public DbSet<WarrantySeo> WarrantySeos { get; set; }
         public DbSet<Gift> Gift { get; set; }
         public DbSet<Order> Order { get; set; }
         public DbSet<OrderDetail> OrderDetail { get; set; }
-        public DbSet<OrderCus> OrderCus { get; set; }
-        public DbSet<OrderDetailCus> OrderDetailCus { get; set; }
         public DbSet<ValueAttribute> ValueAttributes { get; set; }
         public DbSet<Attribute> Attributes { get; set; }
-        public DbSet<Item> Items { get; set; }
         public DbSet<Agency> Agencies { get; set; }
         public DbSet<PaymentInformationModel> PaymentInformationModels { get; set; }
         public DbSet<SeriProduct> SeriProducts { get; set; }

@@ -8,6 +8,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Spectra.Models;
+using Spectra.Models.Authorize;
 
 namespace Spectra.Controllers
 {
@@ -26,7 +27,7 @@ namespace Spectra.Controllers
 
         // GET: api/Home
         [HttpGet]
-        [AllowAnonymous]
+        [BinaryAuthorize("SEOPage", ActionType.Xem)]
         public IEnumerable<Home> GetHomes()
         {
             return _context.Homes.AsNoTracking().OrderByDescending(x => x.Id).ToList();
@@ -56,7 +57,7 @@ namespace Spectra.Controllers
 
         // GET: api/Home/5
         [HttpGet("{id}")]
-        [AllowAnonymous]
+        [BinaryAuthorize("SEOPage", ActionType.Xem)]
         public async Task<IActionResult> GetHome([FromRoute] int? id)
         {
             if (!ModelState.IsValid)
@@ -77,6 +78,7 @@ namespace Spectra.Controllers
         // PUT: api/Home/5
         [HttpPost] 
         [Route("PutHome")]
+        [BinaryAuthorize("SEOPage", ActionType.Sua)]
         public async Task<IActionResult> PutHome([FromBody] Home home)
         {
             if (!ModelState.IsValid)
@@ -101,6 +103,7 @@ namespace Spectra.Controllers
 
         // POST: api/Home
         [HttpPost]
+        [BinaryAuthorize("SEOPage", ActionType.Them)]
         public async Task<IActionResult> PostHome([FromBody] Home home)
         {
             if (!ModelState.IsValid)
@@ -118,6 +121,7 @@ namespace Spectra.Controllers
 
         // DELETE: api/Home/5
         [HttpDelete("{id}")]
+        [BinaryAuthorize("SEOPage", ActionType.Xoa)]
         public async Task<IActionResult> DeleteHome([FromRoute] int? id)
         {
             if (!ModelState.IsValid)

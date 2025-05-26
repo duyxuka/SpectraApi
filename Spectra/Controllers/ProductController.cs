@@ -20,7 +20,7 @@ namespace Spectra.Controllers
     [EnableCors("AddCors")]
     [Route("api/[controller]")]
     [ApiController]
-    //[Authorize]
+    [Authorize]
     
     public class ProductController : ControllerBase
     {
@@ -34,7 +34,7 @@ namespace Spectra.Controllers
 
         // GET: api/Product
         [HttpGet]
-        [AllowAnonymous]
+        [BinaryAuthorize("Product", ActionType.Xem)]
         public IEnumerable<ProductDisplay> GetProducts()
         {
             string pattern = "[ ,+(){}.*+?^$|]";
@@ -82,7 +82,7 @@ namespace Spectra.Controllers
 
         [HttpPost]
         [Route("ProductHangfire")]
-        //[BinaryAuthorize("Product", ActionType.Sua)]
+        [BinaryAuthorize("Product", ActionType.Sua)]
         public async Task<IActionResult> ProductHangfire([FromBody] Product product)
         {
             if (!ModelState.IsValid)
@@ -132,7 +132,7 @@ namespace Spectra.Controllers
 
         [HttpPost]
         [Route("ProductHangfireCancel")]
-        //[BinaryAuthorize("Product", ActionType.Sua)]
+        [BinaryAuthorize("Product", ActionType.Sua)]
         public IActionResult ProductHangfireCancel([FromBody] Product product)
         {
             if (!ModelState.IsValid)
@@ -451,89 +451,6 @@ namespace Spectra.Controllers
             }
         }
 
-        [HttpGet]
-        [Route("ProductGift")]
-        [AllowAnonymous]
-        public IEnumerable<Product> GetProductsGift()
-        {
-            string pattern = "[ ,+(){}.*+?^$|]";
-            Regex rgx = new Regex(pattern);
-            var data = _context.Products
-        .Join(_context.Category, ai => ai.CategoryId,
-              al => al.Id, (ai, al) => new { ai, al }).Join(_context.Gift, gt => gt.ai.GiftId,
-              pr => pr.Id, (gt, pr) => new { gt, pr }).Select(x => new ProductDisplay
-              {
-                  Id = x.gt.ai.Id,
-                  Code = x.gt.ai.Code,
-                  Name = x.gt.ai.Name,
-                  Price = x.gt.ai.Price,
-                  SalePrice = x.gt.ai.SalePrice,
-                  Images = x.gt.ai.Images,
-                  CategoryId = x.gt.ai.CategoryId,
-                  Option = x.gt.ai.Option,
-                  GiftId = x.gt.ai.GiftId,
-                  Status = x.gt.ai.Status,
-                  CreatedDate = x.gt.ai.CreatedDate,
-                  ModifiedDate = x.gt.ai.ModifiedDate,
-                  CategoryName = x.gt.al.Name,
-                  CategoryCode = x.gt.al.Code,
-                  GiftName = x.pr.Name,
-                  GiftPrice = x.pr.Price,
-                  Giaphantram = 100 - ((x.gt.ai.SalePrice * 100) / x.gt.ai.Price),
-                  LinkName = x.gt.ai.Name.Replace(" ", "-").ToLower()
-
-              }).Where(x => x.GiftPrice > 0).ToList();
-            return data;
-        }
-
-        [HttpGet]
-        [Route("getcategoryID/{id}")]
-        [AllowAnonymous]
-        public async Task<IActionResult> GetCategoryID([FromRoute] int? id)
-        {
-            if (!ModelState.IsValid)
-            {
-                return BadRequest(ModelState);
-            }
-            string pattern = "[ ,+(){}.*+?^$|]";
-            Regex rgx = new Regex(pattern);
-
-            try
-            {
-                var data = await _context.Products
-                    .AsNoTracking()
-                    .Join(_context.Category, ai => ai.CategoryId, al => al.Id, (ai, al) => new { ai, al })
-                    .Join(_context.Gift, gt => gt.ai.GiftId, pr => pr.Id, (gt, pr) => new { gt, pr })
-                    .Where(x => x.gt.ai.CategoryId == id)
-                    .Select(x => new ProductDisplay
-                    {
-                        Id = x.gt.ai.Id,
-                        Name = x.gt.ai.Name.Length > 30 ? x.gt.ai.Name.Substring(0, 30) + "..." : x.gt.ai.Name,
-                        Price = x.gt.ai.Price,
-                        SalePrice = x.gt.ai.SalePrice,
-                        TitleSeo = x.gt.ai.TitleSeo,
-                        Images = x.gt.ai.Images,
-                        CategoryId = x.gt.ai.CategoryId,
-                        GiftId = x.gt.ai.GiftId,
-                        Status = x.gt.ai.Status,
-                        CategoryName = x.gt.al.Name,
-                        TitleDescription = x.gt.ai.TitleDescription.Substring(0, 120),
-                        GiftName = x.pr.Name,
-                        GiftPrice = x.pr.Price,
-                        Giaphantram = 100 - ((x.gt.ai.SalePrice * 100) / x.gt.ai.Price),
-                        LinkName = rgx.Replace(x.gt.ai.Name, "-").ToLower()
-                    })
-                    .ToListAsync();
-
-                return Ok(data);
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"Error retrieving products: {ex.Message}");
-                return StatusCode(500, "An error occurred while processing the request.");
-            }
-        }
-
 
         [HttpGet]
         [Route("search")]
@@ -672,7 +589,7 @@ namespace Spectra.Controllers
 
         //lấy biến thể trong add order
         [HttpGet("productaddorder/{id}")]
-        [AllowAnonymous]
+        [BinaryAuthorize("Product", ActionType.Xem)]
         public async Task<IActionResult> GetProductVariants(int id)
         {
             try
@@ -715,7 +632,7 @@ namespace Spectra.Controllers
 
         // GET: api/Product/5
         [HttpGet("{id}")]
-        [AllowAnonymous]
+        [BinaryAuthorize("Product", ActionType.Xem)]
         public async Task<IActionResult> GetProduct([FromRoute] int? id)
         {
             if (!ModelState.IsValid)
@@ -823,128 +740,10 @@ namespace Spectra.Controllers
             return data;
         }
 
-        [HttpGet]
-        [Route("ProductNews")]
-        [AllowAnonymous]
-        public IEnumerable<ProductDisplay> GetProductsNews()
-        {
-            string pattern = "[ ,+(){}.*+?^$|]";
-            Regex rgx = new Regex(pattern);
-
-            var data = _context.Products
-                .AsNoTracking()
-                .Join(_context.Category, ai => ai.CategoryId, al => al.Id, (ai, al) => new { ai, al })
-                .Join(_context.Gift, gt => gt.ai.GiftId, pr => pr.Id, (gt, pr) => new { gt, pr })
-                .OrderByDescending(x => x.gt.ai.CreatedDate)
-                .Select(x => new ProductDisplay
-                {
-                    Id = x.gt.ai.Id,
-                    Code = x.gt.ai.Code,
-                    Name = x.gt.ai.Name,
-                    Price = x.gt.ai.Price,
-                    TitleDescription = x.gt.ai.TitleDescription,
-                    SalePrice = x.gt.ai.SalePrice,
-                    Option = x.gt.ai.Option,
-                    Images = x.gt.ai.Images,
-                    CategoryId = x.gt.ai.CategoryId,
-                    GiftId = x.gt.ai.GiftId,
-                    Status = x.gt.ai.Status,
-                    CreatedDate = x.gt.ai.CreatedDate,
-                    ModifiedDate = x.gt.ai.ModifiedDate,
-                    CategoryName = x.gt.al.Name,
-                    GiftName = x.pr.Name,
-                    GiftPrice = x.pr.Price,
-                    Giaphantram = 100 - ((x.gt.ai.SalePrice * 100) / x.gt.ai.Price),
-                    LinkName = rgx.Replace(x.gt.ai.Name, "-").ToLower()
-                })
-                .ToList();
-
-            return data;
-        }
-
-
-        [HttpGet]
-        [Route("TrashProduct")]
-        [BinaryAuthorize("Product", ActionType.Xoa)]
-        public IEnumerable<Product> GetTrashProduct()
-        {
-            var data = _context.Products
-         .Join(_context.Category, ai => ai.CategoryId,
-               al => al.Id, (ai, al) => new { ai, al }).Select(x => new ProductDisplay
-              {
-                  Id = x.ai.Id,
-                  Code = x.ai.Code,
-                  Name = x.ai.Name,
-                  Price = x.ai.Price,
-                  Images = x.ai.Images,
-                  CategoryId = x.ai.CategoryId,
-                  Status = x.ai.Status,
-                  CreatedDate = x.ai.CreatedDate,
-                  ModifiedDate = x.ai.ModifiedDate,
-                  CategoryName = x.al.Name,
-                  LinkName = x.ai.Name.Replace(" ", "-").ToLower()
-              }).Where(x => x.Status == false).ToList();
-            return data;
-        }
-
-        [HttpPost]
-        [Route("RepeatProduct")]
-        [BinaryAuthorize("Product", ActionType.Xoa)]
-        public async Task<IActionResult> RepeatProduct([FromBody] Product product)
-        {
-            if (!ModelState.IsValid)
-            {
-                return BadRequest(ModelState);
-            }
-
-            _context.Entry(product).State = EntityState.Modified;
-
-            try
-            {
-                product.Status = true;
-                await _context.SaveChangesAsync();
-                return Ok(product);
-            }
-            catch (DbUpdateConcurrencyException)
-            {
-
-            }
-
-            return NoContent();
-        }
-
-        [HttpPost]
-        [Route("TemporaryDelete")]
-        [BinaryAuthorize("Product", ActionType.Xoa)]
-        public async Task<IActionResult> TemporaryDelete([FromBody] Product product)
-        {
-            if (!ModelState.IsValid)
-            {
-                return BadRequest(ModelState);
-            }
-
-            _context.Entry(product).State = EntityState.Modified;
-
-            try
-            {
-                product.Status = false;
-                //categoryProduct.ModifiedDate = DateTime.Now;
-                await _context.SaveChangesAsync();
-                return Ok(product);
-            }
-            catch (DbUpdateConcurrencyException)
-            {
-
-            }
-
-            return NoContent();
-        }
-
-
         // PUT: api/Product/5
         [HttpPost]
         [Route("PutProduct")]
-        //[BinaryAuthorize("Product", ActionType.Sua)]
+        [BinaryAuthorize("Product", ActionType.Sua)]
         public async Task<IActionResult> PutProduct([FromBody] Product product)
         {
             if (!ModelState.IsValid)
@@ -971,7 +770,7 @@ namespace Spectra.Controllers
 
         // POST: api/Product
         [HttpPost]
-        //[BinaryAuthorize("Product", ActionType.Them)]
+        [BinaryAuthorize("Product", ActionType.Them)]
         public async Task<IActionResult> PostProduct([FromBody] Product product)
         {
             if (!ModelState.IsValid)
@@ -989,7 +788,7 @@ namespace Spectra.Controllers
 
         // DELETE: api/Product/5
         [HttpDelete("{id}")]
-        //[BinaryAuthorize("Product", ActionType.Xoa)]
+        [BinaryAuthorize("Product", ActionType.Xoa)]
         public async Task<IActionResult> DeleteProduct([FromRoute] int? id)
         {
             if (!ModelState.IsValid)

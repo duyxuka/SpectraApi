@@ -4,6 +4,7 @@ using System.Linq;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Cors;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -12,6 +13,7 @@ using Spectra.Models.Authorize;
 
 namespace Spectra.Controllers
 {
+    [EnableCors("AddCors")]
     [Route("api/[controller]")]
     [ApiController]
     [Authorize]
@@ -89,8 +91,7 @@ namespace Spectra.Controllers
 
         [HttpGet]
         [Route("ProductAdmin")]
-        [AllowAnonymous]
-        //[BinaryAuthorize("Product", ActionType.Xem)]
+        [BinaryAuthorize("Product", ActionType.Xem)]
         public IActionResult ProductResultAdmin(int? page, int pagesize = 5)
         {
             string pattern = "[ ,+(){}.*+?^$|]";
@@ -330,66 +331,6 @@ namespace Spectra.Controllers
             }
         }
 
-        [HttpGet]
-        [Route("ProductPriceASCBrand")]
-        [AllowAnonymous]
-        public IActionResult ProductPriceASCBrand(int? page, int pagesize = 6)
-        {
-            string pattern = "[ ,+(){}.*+?^$|]";
-            Regex rgx = new Regex(pattern);
-
-            try
-            {
-                var query = _context.Products.AsNoTracking();
-
-                var countDetails = query.Count();
-                var currentPage = page ?? 1;
-                using (var context = _context)
-                {
-                    var productsQuery = query
-                    .OrderBy(p => p.Price)
-                    .Skip((currentPage - 1) * pagesize)
-                    .Take(pagesize)
-                    .Join(context.Category, ai => ai.CategoryId, al => al.Id, (ai, al) => new { ai, al })
-                    .Join(context.Gift, gt => gt.ai.GiftId, pr => pr.Id, (gt, pr) => new { gt, pr })
-                    .Select(x => new ProductDisplay
-                    {
-                        Id = x.gt.ai.Id,
-                        Name = x.gt.ai.Name.Length > 30 ? x.gt.ai.Name.Substring(0, 30) + "..." : x.gt.ai.Name,
-                        Price = x.gt.ai.Price,
-                        SalePrice = x.gt.ai.SalePrice,
-                        Images = x.gt.ai.Images,
-                        Option = x.gt.ai.Option,
-                        CategoryId = x.gt.ai.CategoryId,
-                        GiftId = x.gt.ai.GiftId,
-                        TitleDescription = x.gt.ai.TitleDescription.Substring(0, 120),
-                        Status = x.gt.ai.Status,
-                        CategoryName = x.gt.al.Name,
-                        GiftName = x.pr.Name,
-                        GiftPrice = x.pr.Price,
-                        Giaphantram = 100 - ((x.gt.ai.SalePrice * 100) / x.gt.ai.Price),
-                        LinkName = rgx.Replace(x.gt.ai.Name, "-").ToLower()
-                    })
-                    .ToList();
-
-                    var result = new PageResult<ProductDisplay>
-                    {
-                        Count = countDetails,
-                        PageIndex = currentPage,
-                        PageSize = pagesize,
-                        Items = productsQuery
-                    };
-
-                    return Ok(result);
-                }
-            }
-            catch (Exception ex)
-            {
-                // Log the exception
-                Console.WriteLine($"Error retrieving products: {ex.Message}");
-                return StatusCode(500, "An error occurred while processing the request.");
-            }
-        }
 
         [HttpGet]
         [Route("ProductPriceDSC")]
@@ -434,68 +375,6 @@ namespace Spectra.Controllers
                         LinkName = rgx.Replace(x.gt.ai.Name, "-").ToLower()
                     })
                     .ToList();
-
-                    var result = new PageResult<ProductDisplay>
-                    {
-                        Count = countDetails,
-                        PageIndex = currentPage,
-                        PageSize = pagesize,
-                        Items = productsQuery
-                    };
-
-                    return Ok(result);
-                }
-            }
-            catch (Exception ex)
-            {
-                // Log the exception
-                Console.WriteLine($"Error retrieving products: {ex.Message}");
-                return StatusCode(500, "An error occurred while processing the request.");
-            }
-        }
-
-        [HttpGet]
-        [Route("ProductPriceDSCBrand")]
-        [AllowAnonymous]
-        public IActionResult ProductPriceDSCBrand(int? page, int pagesize = 6)
-        {
-            string pattern = "[ ,+(){}.*+?^$|]";
-            Regex rgx = new Regex(pattern);
-
-            try
-            {
-                var query = _context.Products.AsNoTracking();
-
-                var countDetails = query.Count();
-
-                var currentPage = page ?? 1;
-
-                using (var context = _context)
-                {
-                    var productsQuery = query
-                        .OrderByDescending(p => p.Price)
-                        .Skip((currentPage - 1) * pagesize)
-                        .Take(pagesize)
-                        .Join(context.Category, ai => ai.CategoryId,
-                    al => al.Id, (ai, al) => new { ai, al }).Join(context.Gift, gt => gt.ai.GiftId,
-                    pr => pr.Id, (gt, pr) => new { gt, pr }).Select(x => new ProductDisplay
-                    {
-                        Id = x.gt.ai.Id,
-                        Name = x.gt.ai.Name.Length > 30 ? x.gt.ai.Name.Substring(0, 30) + "..." : x.gt.ai.Name,
-                        Price = x.gt.ai.Price,
-                        SalePrice = x.gt.ai.SalePrice,
-                        Option = x.gt.ai.Option,
-                        Images = x.gt.ai.Images,
-                        CategoryId = x.gt.ai.CategoryId,
-                        GiftId = x.gt.ai.GiftId,
-                        TitleDescription = x.gt.ai.TitleDescription.Substring(0, 120),
-                        Status = x.gt.ai.Status,
-                        CategoryName = x.gt.al.Name,
-                        GiftName = x.pr.Name,
-                        GiftPrice = x.pr.Price,
-                        Giaphantram = 100 - ((x.gt.ai.SalePrice * 100) / x.gt.ai.Price),
-                        LinkName = rgx.Replace(x.gt.ai.Name, "-").ToLower()
-                    }).ToList();
 
                     var result = new PageResult<ProductDisplay>
                     {
@@ -633,7 +512,7 @@ namespace Spectra.Controllers
 
         [HttpGet]
         [Route("NewsDetailsAdmin")]
-        [AllowAnonymous]
+        [BinaryAuthorize("NewsDetail", ActionType.Xem)]
         public IActionResult NewsDetailsAdmin(int? page, int pagesize = 5)
         {
             string pattern = "[ ,+(){}.*+?^$|]";
@@ -804,64 +683,6 @@ namespace Spectra.Controllers
         }
 
         [HttpGet]
-        [Route("getnewcateDT/{id}")]
-        [AllowAnonymous]
-        public IActionResult NewsDetailsCategoryDT([FromRoute] int? id, int? page, int pagesize = 3)
-        {
-            string pattern = "[ ,+(){}.*+?^$|]";
-            Regex rgx = new Regex(pattern);
-
-            try
-            {
-                var currentPage = page ?? 1;
-
-                using (var context = _context)
-                {
-                    var query = context.NewsDetails
-                        .AsNoTracking()
-                        .Where(x => x.CategoryNewId == id && x.Status == true);
-                    var countDetails = query.Count();
-
-                    var result = new PageResult<NewsDetailDisplay>
-                    {
-                        Count = countDetails,
-                        PageIndex = currentPage,
-                        PageSize = pagesize,
-                        Items = query
-                            .OrderByDescending(x => x.CreatedDate)
-                            .Skip((currentPage - 1) * pagesize)
-                            .Take(pagesize)
-                            .Join(context.CategoryNews, ai => ai.CategoryNewId, al => al.Id, (ai, al) => new { ai, al })
-                            .Select(x => new NewsDetailDisplay
-                            {
-                                Id = x.ai.Id,
-                                Name = x.ai.Name,
-                                Code = x.ai.Code,
-                                CategoryNewId = x.ai.CategoryNewId,
-                                Description = x.ai.Description,
-                                Image = x.ai.Image,
-                                TitleSeo = x.ai.TitleSeo,
-                                MetaKeyWords = x.ai.MetaKeyWords,
-                                MetaDescription = x.ai.MetaDescription,
-                                CreatedDate = x.ai.CreatedDate,
-                                Status = x.ai.Status,
-                                LinkName = rgx.Replace(x.ai.Name, "-").ToLower()
-                            })
-                            .ToList()
-                    };
-
-                    return Ok(result);
-                }
-            }
-            catch (Exception ex)
-            {
-                // Log the exception
-                Console.WriteLine($"Error retrieving news details: {ex.Message}");
-                return StatusCode(500, "An error occurred while processing the request.");
-            }
-        }
-
-        [HttpGet]
         [Route("getServiceId/{id}")]
         [AllowAnonymous]
         public IActionResult getServiceId([FromRoute] int? id, int? page, int pagesize = 6)
@@ -985,8 +806,7 @@ namespace Spectra.Controllers
 
         [HttpGet]
         [Route("WelcomeDetail")]
-        [AllowAnonymous]
-        //[BinaryAuthorize("WelcomeDetail", ActionType.Xem)]
+        [BinaryAuthorize("WelcomeDetail", ActionType.Xem)]
         public IActionResult WelcomeDetailResult(int? page, int pagesize = 5)
         {
             string pattern = "[ ,+(){}.*+?^$|]";
@@ -1038,7 +858,7 @@ namespace Spectra.Controllers
 
         [HttpGet]
         [Route("ServiceDetail")]
-        //[BinaryAuthorize("ServiceDetail", ActionType.Xem)]
+        [BinaryAuthorize("ServiceDetail", ActionType.Xem)]
         public IActionResult ServiceDetail(int? page, int pagesize = 5)
         {
             string pattern = "[ ,+(){}.*+?^$|]";

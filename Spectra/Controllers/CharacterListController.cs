@@ -8,6 +8,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Spectra.Models;
+using Spectra.Models.Authorize;
 
 namespace Spectra.Controllers
 {
@@ -26,7 +27,7 @@ namespace Spectra.Controllers
 
         // GET: api/CharacterList
         [HttpGet]
-        [AllowAnonymous]
+        [BinaryAuthorize("BenefitsandFeatures", ActionType.Xem)]
         public IEnumerable<CharacterList> GetCharacterLists()
         {
             return _context.CharacterLists.Join(_context.Characteristics, ai => ai.CharacteristicId,
@@ -93,7 +94,7 @@ namespace Spectra.Controllers
         }
         // GET: api/CharacterList/5
         [HttpGet("{id}")]
-        [AllowAnonymous]
+        [BinaryAuthorize("BenefitsandFeatures", ActionType.Xem)]
         public async Task<IActionResult> GetCharacterList([FromRoute] int? id)
         {
             if (!ModelState.IsValid)
@@ -114,6 +115,7 @@ namespace Spectra.Controllers
         // PUT: api/CharacterList/5
         [HttpPost]
         [Route("PutCharacterList")]
+        [BinaryAuthorize("BenefitsandFeatures", ActionType.Sua)]
         public async Task<IActionResult> PutCharacterList([FromBody] CharacterList characterList)
         {
             if (!ModelState.IsValid)
@@ -139,6 +141,7 @@ namespace Spectra.Controllers
 
         // POST: api/CharacterList
         [HttpPost]
+        [BinaryAuthorize("BenefitsandFeatures", ActionType.Them)]
         public async Task<IActionResult> PostCharacterList([FromBody] CharacterList characterList)
         {
             if (!ModelState.IsValid)
@@ -168,6 +171,7 @@ namespace Spectra.Controllers
 
         // DELETE: api/CharacterList/5
         [HttpDelete("{id}")]
+        [BinaryAuthorize("BenefitsandFeatures", ActionType.Xoa)]
         public async Task<IActionResult> DeleteCharacterList([FromRoute] int? id)
         {
             if (!ModelState.IsValid)

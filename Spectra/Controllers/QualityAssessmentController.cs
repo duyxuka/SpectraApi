@@ -8,6 +8,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Spectra.Models;
+using Spectra.Models.Authorize;
 
 namespace Spectra.Controllers
 {
@@ -26,6 +27,7 @@ namespace Spectra.Controllers
 
         // GET: api/QualityAssessment
         [HttpGet]
+        [BinaryAuthorize("QualityAssessment", ActionType.Xem)]
         public IEnumerable<QualityAssessment> GetQualityAssessments()
         {
             return _context.QualityAssessments.OrderByDescending(x=> x.CreatedDate);
@@ -33,6 +35,7 @@ namespace Spectra.Controllers
 
         // GET: api/QualityAssessment/5
         [HttpGet("{id}")]
+        [BinaryAuthorize("QualityAssessment", ActionType.Xem)]
         public async Task<IActionResult> GetQualityAssessment([FromRoute] int? id)
         {
             if (!ModelState.IsValid)
@@ -52,6 +55,7 @@ namespace Spectra.Controllers
 
         // PUT: api/QualityAssessment/5
         [HttpPut("{id}")]
+        [BinaryAuthorize("QualityAssessment", ActionType.Sua)]
         public async Task<IActionResult> PutQualityAssessment([FromRoute] int? id, [FromBody] QualityAssessment qualityAssessment)
         {
             if (!ModelState.IsValid)
@@ -103,6 +107,7 @@ namespace Spectra.Controllers
 
         // DELETE: api/QualityAssessment/5
         [HttpDelete("{id}")]
+        [BinaryAuthorize("QualityAssessment", ActionType.Xoa)]
         public async Task<IActionResult> DeleteQualityAssessment([FromRoute] int? id)
         {
             if (!ModelState.IsValid)

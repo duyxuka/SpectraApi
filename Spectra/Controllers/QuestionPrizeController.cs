@@ -2,15 +2,20 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Cors;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Spectra.Models;
+using Spectra.Models.Authorize;
 
 namespace Spectra.Controllers
 {
+    [EnableCors("AddCors")]
     [Route("api/[controller]")]
     [ApiController]
+    [Authorize]
     public class QuestionPrizeController : ControllerBase
     {
         private readonly AppDBContext _context;
@@ -22,6 +27,7 @@ namespace Spectra.Controllers
 
         // GET: api/QuestionPrize
         [HttpGet]
+        [BinaryAuthorize("Question", ActionType.Xem)]
         public IEnumerable<QuestionPrize> GetQuestionPrizes()
         {
             return _context.QuestionPrizes.OrderByDescending(x=> x.Id);
@@ -29,13 +35,15 @@ namespace Spectra.Controllers
 
         [HttpGet]
         [Route("QuestionPrizeUser")]
+        [AllowAnonymous]
         public IEnumerable<QuestionPrize> GetQuestionPrizesUser()
         {
-            return _context.QuestionPrizes.Where(x => x.Status == true);
+            return _context.QuestionPrizes.Where(x => x.Status == true).OrderByDescending(x => x.Id);
         }
 
         // GET: api/QuestionPrize/5
         [HttpGet("{id}")]
+        [BinaryAuthorize("Question", ActionType.Xem)]
         public async Task<IActionResult> GetQuestionPrize([FromRoute] int? id)
         {
             if (!ModelState.IsValid)
@@ -56,6 +64,7 @@ namespace Spectra.Controllers
         // PUT: api/QuestionPrize/5
         [HttpPost]
         [Route("PutQuestionPrize")]
+        [BinaryAuthorize("Question", ActionType.Sua)]
         public async Task<IActionResult> PutQuestionPrize([FromBody] QuestionPrize questionPrize)
         {
             if (!ModelState.IsValid)
@@ -80,6 +89,7 @@ namespace Spectra.Controllers
 
         // POST: api/QuestionPrize
         [HttpPost]
+        [BinaryAuthorize("Question", ActionType.Them)]
         public async Task<IActionResult> PostQuestionPrize([FromBody] QuestionPrize questionPrize)
         {
             if (!ModelState.IsValid)
@@ -95,6 +105,7 @@ namespace Spectra.Controllers
 
         // DELETE: api/QuestionPrize/5
         [HttpDelete("{id}")]
+        [BinaryAuthorize("Question", ActionType.Xoa)]
         public async Task<IActionResult> DeleteQuestionPrize([FromRoute] int? id)
         {
             if (!ModelState.IsValid)

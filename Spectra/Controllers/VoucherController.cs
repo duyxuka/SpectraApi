@@ -9,6 +9,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Spectra.Models;
+using Spectra.Models.Authorize;
 using Spectra.Services;
 
 namespace Spectra.Controllers
@@ -16,7 +17,7 @@ namespace Spectra.Controllers
     [EnableCors("AddCors")]
     [Route("api/[controller]")]
     [ApiController]
-    //[Authorize]
+    [Authorize]
     public class VoucherController : ControllerBase
     {
         private readonly AppDBContext _context;
@@ -30,7 +31,7 @@ namespace Spectra.Controllers
 
         // GET: api/Voucher
         [HttpGet]
-        [AllowAnonymous]
+        [BinaryAuthorize("Product", ActionType.Xem)]
         public IEnumerable<Voucher> GetVouchers()
         {
             return _context.Vouchers.AsNoTracking()
@@ -56,7 +57,7 @@ namespace Spectra.Controllers
 
         [HttpGet]
         [Route("GetVoucherPro")]
-        [AllowAnonymous]
+        [BinaryAuthorize("Product", ActionType.Xem)]
         public IEnumerable<Voucher> GetVouchersByProduct([FromQuery] int id)
         {
             return _context.Vouchers.AsNoTracking()
@@ -82,7 +83,7 @@ namespace Spectra.Controllers
         }
         [HttpGet]
         [Route("GetVoucherProActive")]
-        [AllowAnonymous]
+        [BinaryAuthorize("Product", ActionType.Xem)]
         public IEnumerable<Voucher> GetVouchersByProductActive([FromQuery] int id)
         {
             return _context.Vouchers.AsNoTracking()
@@ -140,6 +141,7 @@ namespace Spectra.Controllers
 
         [HttpPost]
         [Route("VoucherHangfire")]
+        [BinaryAuthorize("Product", ActionType.Sua)]
         public async Task<IActionResult> VoucherHangfire([FromBody] Voucher voucher)
         {
             if (!ModelState.IsValid)
@@ -189,6 +191,7 @@ namespace Spectra.Controllers
 
         [HttpPost]
         [Route("VoucherHangfireCancel")]
+        [BinaryAuthorize("Product", ActionType.Sua)]
         public IActionResult VoucherHangfireCancel([FromBody] Voucher voucher)
         {
             if (!ModelState.IsValid)
@@ -217,6 +220,7 @@ namespace Spectra.Controllers
 
         // GET: api/Voucher/5
         [HttpGet("{id}")]
+        [BinaryAuthorize("Product", ActionType.Xem)]
         public async Task<IActionResult> GetVoucher([FromRoute] int id)
         {
             if (!ModelState.IsValid)
@@ -237,6 +241,7 @@ namespace Spectra.Controllers
         // PUT: api/Voucher/5
         [HttpPost]
         [Route("PutVoucher")]
+        [BinaryAuthorize("Product", ActionType.Sua)]
         public async Task<IActionResult> PutVoucher([FromBody] Voucher voucher)
         {
             if (!ModelState.IsValid)
@@ -260,6 +265,7 @@ namespace Spectra.Controllers
 
         // POST: api/Voucher
         [HttpPost]
+        [BinaryAuthorize("Product", ActionType.Them)]
         public async Task<IActionResult> PostVoucher([FromBody] Voucher voucher)
         {
             if (!ModelState.IsValid)
@@ -279,6 +285,7 @@ namespace Spectra.Controllers
 
         // DELETE: api/Voucher/5
         [HttpDelete("{id}")]
+        [BinaryAuthorize("Product", ActionType.Xoa)]
         public async Task<IActionResult> DeleteVoucher([FromRoute] int id)
         {
             if (!ModelState.IsValid)

@@ -10,6 +10,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Spectra.Models;
+using Spectra.Models.Authorize;
 
 namespace Spectra.Controllers
 {
@@ -28,7 +29,7 @@ namespace Spectra.Controllers
 
         // GET: api/Contact
         [HttpGet]
-        [AllowAnonymous]
+        [BinaryAuthorize("Contact", ActionType.Xem)]
         public IEnumerable<Contact> GetContacts()
         {
             return _context.Contacts.OrderByDescending(x => x.Id).ToList();
@@ -36,7 +37,7 @@ namespace Spectra.Controllers
 
         // GET: api/Contact/5
         [HttpGet("{id}")]
-        [AllowAnonymous]
+        [BinaryAuthorize("Contact", ActionType.Xem)]
         public async Task<IActionResult> GetContact([FromRoute] int? id)
         {
             if (!ModelState.IsValid)
@@ -56,6 +57,7 @@ namespace Spectra.Controllers
 
         // PUT: api/Contact/5
         [HttpPut("{id}")]
+        [BinaryAuthorize("Contact", ActionType.Sua)]
         public async Task<IActionResult> PutContact([FromRoute] int? id, [FromBody] Contact contact)
         {
             if (!ModelState.IsValid)
@@ -160,6 +162,7 @@ namespace Spectra.Controllers
         }
         // DELETE: api/Contact/5
         [HttpDelete("{id}")]
+        [BinaryAuthorize("Contact", ActionType.Xoa)]
         public async Task<IActionResult> DeleteContact([FromRoute] int? id)
         {
             if (!ModelState.IsValid)

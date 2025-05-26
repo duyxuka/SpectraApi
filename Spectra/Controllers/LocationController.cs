@@ -8,13 +8,14 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Spectra.Models;
+using Spectra.Models.Authorize;
 
 namespace Spectra.Controllers
 {
     [EnableCors("AddCors")]
     [Route("api/[controller]")]
     [ApiController]
-    [Authorize]
+    //[Authorize]
     public class LocationController : ControllerBase
     {
         private readonly AppDBContext _context;
@@ -51,10 +52,43 @@ namespace Spectra.Controllers
             return locations;
         }
 
+        [HttpGet]
+        [Route("DailyRandom")]
+        [AllowAnonymous] // Hoặc [BinaryAuthorize("Location", ActionType.Xem)] nếu cần quyền
+        public async Task<IActionResult> GetRandomLocations()
+        {
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(ModelState);
+            }
+
+            var locations = await _context.Locations
+                .AsNoTracking()
+                .Join(_context.Cities,
+                      ci => ci.CityId,
+                      co => co.Id,
+                      (ci, co) => new LocationDisplay
+                      {
+                          Id = ci.Id,
+                          Name = ci.Name,
+                          Description = ci.Description,
+                          Code = ci.Code,
+                          Status = ci.Status,
+                          CityName = co.Name,
+                          CityId = ci.CityId,
+                          CreatedDate = ci.CreatedDate,
+                          ModifiedDate = ci.ModifiedDate
+                      })
+                .OrderBy(x => Guid.NewGuid()) // Sắp xếp ngẫu nhiên
+                .Take(50) // Lấy 50 bản ghi
+                .ToListAsync();
+
+            return Ok(locations);
+        }
 
         // GET: api/Location/5
         [HttpGet("{id}")]
-        [AllowAnonymous]
+        [BinaryAuthorize("Location", ActionType.Xem)]
         public async Task<IActionResult> GetLocation([FromRoute] int? id)
         {
             if (!ModelState.IsValid)
@@ -108,7 +142,7 @@ namespace Spectra.Controllers
 
         [HttpGet]
         [Route("GetbyCityAdmin/{id}")]
-        [AllowAnonymous]
+        [BinaryAuthorize("Location", ActionType.Xem)]
         public async Task<IActionResult> GetLocationCityAdmin([FromRoute] int? id)
         {
             if (!ModelState.IsValid)
@@ -141,7 +175,7 @@ namespace Spectra.Controllers
 
         [HttpGet]
         [Route("GetbyLocation/{name}")]
-        [AllowAnonymous]
+        [BinaryAuthorize("Location", ActionType.Xem)]
         public async Task<IActionResult> GetLocationName([FromRoute] string name)
         {
             if (!ModelState.IsValid)
@@ -175,6 +209,7 @@ namespace Spectra.Controllers
         // PUT: api/Location/5
         [HttpPost]
         [Route("PutLocation")]
+        [BinaryAuthorize("Location", ActionType.Sua)]
         public async Task<IActionResult> PutLocation([FromBody] Location location)
         {
             if (!ModelState.IsValid)
@@ -199,6 +234,7 @@ namespace Spectra.Controllers
 
         // POST: api/Location
         [HttpPost]
+        [BinaryAuthorize("Location", ActionType.Them)]
         public async Task<IActionResult> PostLocation([FromBody] Location location)
         {
             if (!ModelState.IsValid)
@@ -214,6 +250,7 @@ namespace Spectra.Controllers
 
         // DELETE: api/Location/5
         [HttpDelete("{id}")]
+        [BinaryAuthorize("Location", ActionType.Xoa)]
         public async Task<IActionResult> DeleteLocation([FromRoute] int? id)
         {
             if (!ModelState.IsValid)

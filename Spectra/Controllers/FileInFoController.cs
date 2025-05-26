@@ -20,6 +20,7 @@ namespace Spectra.Controllers
     [EnableCors("AddCors")]
     [Route("api/[controller]")]
     [ApiController]
+    [Authorize]
 
     public class FileInFoController : ControllerBase
     {
@@ -55,6 +56,7 @@ namespace Spectra.Controllers
 
         // upload file(s) to server that palce under path: rootDirectory/subDirectory
         [HttpPost("upload")]
+        [AllowAnonymous]
         public async Task<IActionResult> UploadFile([FromForm(Name = "file")] List<IFormFile> files, string subDirectory)
         {
             try
@@ -75,6 +77,7 @@ namespace Spectra.Controllers
         }
 
         [HttpPost("uploadUser")]
+        [AllowAnonymous]
         public async Task<IActionResult> UploadFileUser([FromForm(Name = "file")] List<IFormFile> files, string subDirectory)
         {
 

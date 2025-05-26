@@ -8,6 +8,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Spectra.Models;
+using Spectra.Models.Authorize;
 
 namespace Spectra.Controllers
 {
@@ -26,7 +27,7 @@ namespace Spectra.Controllers
 
         // GET: api/Gift
         [HttpGet]
-        [AllowAnonymous]
+        [BinaryAuthorize("Product", ActionType.Xem)]
         public IEnumerable<Gift> GetGift()
         {
             return _context.Gift;
@@ -34,7 +35,7 @@ namespace Spectra.Controllers
 
         // GET: api/Gift/5
         [HttpGet("{id}")]
-        [AllowAnonymous]
+        [BinaryAuthorize("Product", ActionType.Xem)]
         public async Task<IActionResult> GetGift([FromRoute] int? id)
         {
             if (!ModelState.IsValid)
@@ -55,6 +56,7 @@ namespace Spectra.Controllers
         // PUT: api/Gift/5
         [HttpPost]
         [Route("PutGift")]
+        [BinaryAuthorize("Product", ActionType.Sua)]
         public async Task<IActionResult> PutGift([FromBody] Gift gift)
         {
             if (!ModelState.IsValid)
@@ -80,6 +82,7 @@ namespace Spectra.Controllers
 
         // POST: api/Gift
         [HttpPost]
+        [BinaryAuthorize("Product", ActionType.Them)]
         public async Task<IActionResult> PostGift([FromBody] Gift gift)
         {
             if (!ModelState.IsValid)
@@ -95,6 +98,7 @@ namespace Spectra.Controllers
 
         // DELETE: api/Gift/5
         [HttpDelete("{id}")]
+        [BinaryAuthorize("Product", ActionType.Xoa)]
         public async Task<IActionResult> DeleteGift([FromRoute] int? id)
         {
             if (!ModelState.IsValid)

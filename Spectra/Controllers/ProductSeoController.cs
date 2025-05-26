@@ -8,6 +8,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Spectra.Models;
+using Spectra.Models.Authorize;
 
 namespace Spectra.Controllers
 {
@@ -41,7 +42,7 @@ namespace Spectra.Controllers
         }
         // GET: api/ProductSeo
         [HttpGet]
-        [AllowAnonymous]
+        [BinaryAuthorize("SEOPage", ActionType.Xem)]
         public IEnumerable<ProductSeo> GetProductSeos()
         {
             return _context.ProductSeos.AsNoTracking().OrderByDescending(x => x.Id).ToList(); ;
@@ -70,6 +71,7 @@ namespace Spectra.Controllers
         // PUT: api/ProductSeo/5
         [HttpPost]
         [Route("PutProductSeo")]
+        [BinaryAuthorize("SEOPage", ActionType.Sua)]
         public async Task<IActionResult> PutProductSeo([FromBody] ProductSeo productSeo)
         {
             if (!ModelState.IsValid)
@@ -94,6 +96,7 @@ namespace Spectra.Controllers
 
         // POST: api/ProductSeo
         [HttpPost]
+        [BinaryAuthorize("SEOPage", ActionType.Them)]
         public async Task<IActionResult> PostProductSeo([FromBody] ProductSeo productSeo)
         {
             if (!ModelState.IsValid)
@@ -111,6 +114,7 @@ namespace Spectra.Controllers
 
         // DELETE: api/ProductSeo/5
         [HttpDelete("{id}")]
+        [BinaryAuthorize("SEOPage", ActionType.Xoa)]
         public async Task<IActionResult> DeleteProductSeo([FromRoute] int? id)
         {
             if (!ModelState.IsValid)

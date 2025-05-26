@@ -8,6 +8,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Spectra.Models;
+using Spectra.Models.Authorize;
 
 namespace Spectra.Controllers
 {
@@ -26,7 +27,7 @@ namespace Spectra.Controllers
 
         // GET: api/Agency
         [HttpGet]
-        [AllowAnonymous]
+        [BinaryAuthorize("SEOPage", ActionType.Xem)]
         public IEnumerable<Agency> GetAgencies()
         {
             return _context.Agencies.AsNoTracking().OrderByDescending(x => x.Id).ToList(); 
@@ -59,7 +60,7 @@ namespace Spectra.Controllers
 
         // GET: api/Agency/5
         [HttpGet("{id}")]
-        [AllowAnonymous]
+        [BinaryAuthorize("SEOPage", ActionType.Xem)]
         public async Task<IActionResult> GetAgency([FromRoute] int? id)
         {
             if (!ModelState.IsValid)
@@ -83,6 +84,7 @@ namespace Spectra.Controllers
         // PUT: api/Agency/5
         [HttpPost]
         [Route("PutAgencySeo")]
+        [BinaryAuthorize("SEOPage", ActionType.Sua)]
         public async Task<IActionResult> PutAgency([FromBody] Agency agency)
         {
             if (!ModelState.IsValid)
@@ -107,6 +109,7 @@ namespace Spectra.Controllers
 
         // POST: api/Agency
         [HttpPost]
+        [BinaryAuthorize("SEOPage", ActionType.Them)]
         public async Task<IActionResult> PostAgency([FromBody] Agency agency)
         {
             if (!ModelState.IsValid)
@@ -124,6 +127,7 @@ namespace Spectra.Controllers
 
         // DELETE: api/Agency/5
         [HttpDelete("{id}")]
+        [BinaryAuthorize("SEOPage", ActionType.Xoa)]
         public async Task<IActionResult> DeleteAgency([FromRoute] int? id)
         {
             if (!ModelState.IsValid)

@@ -8,6 +8,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Spectra.Models;
+using Spectra.Models.Authorize;
 
 namespace Spectra.Controllers
 {
@@ -26,7 +27,7 @@ namespace Spectra.Controllers
 
         // GET: api/Question
         [HttpGet]
-        [AllowAnonymous]
+        [BinaryAuthorize("Question", ActionType.Xem)]
         public IEnumerable<Question> GetQuestions()
         {
             return _context.Questions.Join(_context.Products, ai => ai.ProductId,
@@ -91,7 +92,7 @@ namespace Spectra.Controllers
 
         // GET: api/Question/5
         [HttpGet("{id}")]
-        [AllowAnonymous]
+        [BinaryAuthorize("Question", ActionType.Xem)]
         public async Task<IActionResult> GetQuestion([FromRoute] int? id)
         {
             if (!ModelState.IsValid)
@@ -112,6 +113,7 @@ namespace Spectra.Controllers
         // PUT: api/Question/5
         [HttpPost]
         [Route("PutQuestion")]
+        [BinaryAuthorize("Question", ActionType.Sua)]
         public async Task<IActionResult> PutQuestion([FromBody] Question question)
         {
             if (!ModelState.IsValid)
@@ -137,6 +139,7 @@ namespace Spectra.Controllers
 
         // POST: api/Question
         [HttpPost]
+        [BinaryAuthorize("Question", ActionType.Them)]
         public async Task<IActionResult> PostQuestion([FromBody] Question question)
         {
             if (!ModelState.IsValid)
@@ -152,6 +155,7 @@ namespace Spectra.Controllers
 
         // DELETE: api/Question/5
         [HttpDelete("{id}")]
+        [BinaryAuthorize("Question", ActionType.Xoa)]
         public async Task<IActionResult> DeleteQuestion([FromRoute] int? id)
         {
             if (!ModelState.IsValid)

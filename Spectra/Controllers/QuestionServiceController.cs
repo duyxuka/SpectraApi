@@ -8,6 +8,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Spectra.Models;
+using Spectra.Models.Authorize;
 
 namespace Spectra.Controllers
 {
@@ -26,7 +27,7 @@ namespace Spectra.Controllers
 
         // GET: api/QuestionService
         [HttpGet]
-        [AllowAnonymous]
+        [BinaryAuthorize("Question", ActionType.Xem)]
         public IEnumerable<QuestionService> GetQuestionServices()
         {
             return _context.QuestionServices.Join(_context.ServiceDetails, ai => ai.ServiceDetailId,
@@ -91,7 +92,7 @@ namespace Spectra.Controllers
 
         // GET: api/QuestionService/5
         [HttpGet("{id}")]
-        [AllowAnonymous]
+        [BinaryAuthorize("Question", ActionType.Xem)]
         public async Task<IActionResult> GetQuestionService([FromRoute] int? id)
         {
             if (!ModelState.IsValid)
@@ -112,6 +113,7 @@ namespace Spectra.Controllers
         // PUT: api/QuestionService/5
         [HttpPost]
         [Route("PutQuestionService")]
+        [BinaryAuthorize("Question", ActionType.Sua)]
         public async Task<IActionResult> PutQuestionService([FromBody] QuestionService questionService)
         {
             if (!ModelState.IsValid)
@@ -137,6 +139,7 @@ namespace Spectra.Controllers
 
         // POST: api/QuestionService
         [HttpPost]
+        [BinaryAuthorize("Question", ActionType.Them)]
         public async Task<IActionResult> PostQuestionService([FromBody] QuestionService questionService)
         {
             if (!ModelState.IsValid)
@@ -152,6 +155,7 @@ namespace Spectra.Controllers
 
         // DELETE: api/QuestionService/5
         [HttpDelete("{id}")]
+        [BinaryAuthorize("Question", ActionType.Xoa)]
         public async Task<IActionResult> DeleteQuestionService([FromRoute] int? id)
         {
             if (!ModelState.IsValid)

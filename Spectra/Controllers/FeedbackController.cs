@@ -8,6 +8,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Spectra.Models;
+using Spectra.Models.Authorize;
 
 namespace Spectra.Controllers
 {
@@ -27,7 +28,7 @@ namespace Spectra.Controllers
 
         // GET: api/Feedback
         [HttpGet]
-        [AllowAnonymous]
+        [BinaryAuthorize("Feedback", ActionType.Xem)]
         public IEnumerable<Feedback> GetFeedbacks()
         {
             var data = _context.Feedbacks.Join(_context.Products, ai => ai.ProductId,
@@ -73,7 +74,7 @@ namespace Spectra.Controllers
         }
         // GET: api/Feedback/5
         [HttpGet("{id}")]
-        [AllowAnonymous]
+        [BinaryAuthorize("Feedback", ActionType.Xem)]
         public async Task<IActionResult> GetFeedback([FromRoute] int? id)
         {
             if (!ModelState.IsValid)
@@ -94,6 +95,7 @@ namespace Spectra.Controllers
         // PUT: api/Feedback/5
         [HttpPost]
         [Route("PutFeedback")]
+        [BinaryAuthorize("Feedback", ActionType.Sua)]
         public async Task<IActionResult> PutFeedback([FromRoute] int? id, [FromBody] Feedback feedback)
         {
             if (!ModelState.IsValid)
@@ -118,7 +120,7 @@ namespace Spectra.Controllers
 
         [HttpGet]
         [Route("getproductId/{id}")]
-        [AllowAnonymous]
+        [BinaryAuthorize("Feedback", ActionType.Xem)]
         public async Task<IActionResult> GetCategory([FromRoute] int? id)
         {
             
@@ -164,7 +166,7 @@ namespace Spectra.Controllers
 
         [HttpGet]
         [Route("getRating/{id}")]
-        [AllowAnonymous]
+        [BinaryAuthorize("Feedback", ActionType.Xem)]
         public async Task<IActionResult> GetRating([FromRoute] int? id)
         {
 
@@ -185,7 +187,7 @@ namespace Spectra.Controllers
         }
         // POST: api/Feedback
         [HttpPost]
-        [AllowAnonymous]
+        [BinaryAuthorize("Feedback", ActionType.Them)]
         public async Task<IActionResult> PostFeedback([FromBody] Feedback feedback)
         {
             if (!ModelState.IsValid)
@@ -202,6 +204,7 @@ namespace Spectra.Controllers
 
         // DELETE: api/Feedback/5
         [HttpDelete("{id}")]
+        [BinaryAuthorize("Feedback", ActionType.Xoa)]
         public async Task<IActionResult> DeleteFeedback([FromRoute] int? id)
         {
             if (!ModelState.IsValid)

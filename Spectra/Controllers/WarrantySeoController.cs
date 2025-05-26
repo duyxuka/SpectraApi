@@ -8,6 +8,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Spectra.Models;
+using Spectra.Models.Authorize;
 
 namespace Spectra.Controllers
 {
@@ -26,6 +27,7 @@ namespace Spectra.Controllers
 
         // GET: api/WarrantySeo
         [HttpGet]
+        [BinaryAuthorize("SEOPage", ActionType.Xem)]
         public IEnumerable<WarrantySeo> GetWarrantySeos()
         {
             return _context.WarrantySeos.AsNoTracking().OrderByDescending(x => x.Id).ToList();
@@ -50,7 +52,7 @@ namespace Spectra.Controllers
         }
         // GET: api/WarrantySeo/5
         [HttpGet("{id}")]
-        [AllowAnonymous]
+        [BinaryAuthorize("SEOPage", ActionType.Xem)]
         public async Task<IActionResult> GetWarrantySeo([FromRoute] int? id)
         {
             if (!ModelState.IsValid)
@@ -71,6 +73,7 @@ namespace Spectra.Controllers
         // PUT: api/WarrantySeo/5
         [HttpPost]
         [Route("PutWarranty")]
+        [BinaryAuthorize("SEOPage", ActionType.Sua)]
         public async Task<IActionResult> PutWarrantySeo([FromBody] WarrantySeo warrantySeo)
         {
             if (!ModelState.IsValid)
@@ -95,6 +98,7 @@ namespace Spectra.Controllers
 
         // POST: api/WarrantySeo
         [HttpPost]
+        [BinaryAuthorize("SEOPage", ActionType.Them)]
         public async Task<IActionResult> PostWarrantySeo([FromBody] WarrantySeo warrantySeo)
         {
             if (!ModelState.IsValid)
@@ -112,6 +116,7 @@ namespace Spectra.Controllers
 
         // DELETE: api/WarrantySeo/5
         [HttpDelete("{id}")]
+        [BinaryAuthorize("SEOPage", ActionType.Xoa)]
         public async Task<IActionResult> DeleteWarrantySeo([FromRoute] int? id)
         {
             if (!ModelState.IsValid)

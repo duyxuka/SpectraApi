@@ -28,7 +28,7 @@ namespace Spectra.Controllers
 
         // GET: api/SeriProduct
         [HttpGet]
-        [AllowAnonymous]
+        [BinaryAuthorize("SeriProduct", ActionType.Xem)]
         public IEnumerable<SeriProduct> GetSeriProducts()
         {
             var seriproduct = _context.SeriProducts
@@ -60,7 +60,7 @@ namespace Spectra.Controllers
 
         [HttpGet]
         [Route("ExportedProductsLast6Months")]
-        [AllowAnonymous] // Cho phép truy cập mà không cần xác thực
+        [BinaryAuthorize("Dashboard", ActionType.Xem)]
         public async Task<IActionResult> GetExportedProductsLast6Months()
         {
             try
@@ -119,8 +119,7 @@ namespace Spectra.Controllers
 
         [HttpGet]
         [Route("SeriProductPage")]
-        [AllowAnonymous]
-        //[BinaryAuthorize("SeriProduct", ActionType.Xem)]
+        [BinaryAuthorize("SeriProduct", ActionType.Xem)]
         public IActionResult SeriProductResult(int? page, int pagesize = 5)
         {
             string pattern = "[ ,+(){}.*+?^$|]";
@@ -177,7 +176,7 @@ namespace Spectra.Controllers
         }
         // GET: api/SeriProduct/5
         [HttpGet("{id}")]
-        [AllowAnonymous]
+        [BinaryAuthorize("SeriProduct", ActionType.Xem)]
         public async Task<IActionResult> GetSeriProduct([FromRoute] int? id)
         {
             if (!ModelState.IsValid)
@@ -243,7 +242,7 @@ namespace Spectra.Controllers
         // PUT: api/SeriProduct/5
         [HttpPost]
         [Route("PutSeriProduct")]
-        //[BinaryAuthorize("SeriProduct", ActionType.Sua)]
+        [BinaryAuthorize("SeriProduct", ActionType.Sua)]
         public async Task<IActionResult> PutSeriProduct([FromBody] SeriProduct seriProduct)
         {
             if (!ModelState.IsValid)
@@ -280,7 +279,7 @@ namespace Spectra.Controllers
 
         // POST: api/SeriProduct
         [HttpPost]
-        //[BinaryAuthorize("SeriProduct", ActionType.Them)]
+        [BinaryAuthorize("SeriProduct", ActionType.Them)]
         public async Task<IActionResult> PostSeriProduct([FromBody] SeriProduct seriProduct)
         {
             if (!ModelState.IsValid)
@@ -297,7 +296,7 @@ namespace Spectra.Controllers
 
         // DELETE: api/SeriProduct/5
         [HttpDelete("{id}")]
-        //[BinaryAuthorize("SeriProduct", ActionType.Xoa)]
+        [BinaryAuthorize("SeriProduct", ActionType.Xoa)]
         public async Task<IActionResult> DeleteSeriProduct([FromRoute] int? id)
         {
             if (!ModelState.IsValid)

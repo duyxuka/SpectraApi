@@ -28,7 +28,7 @@ namespace Spectra.Controllers
 
         // GET: api/ServiceDetail
         [HttpGet]
-        [AllowAnonymous]
+        [BinaryAuthorize("ServiceDetail", ActionType.Xem)]
         public IEnumerable<ServiceDetail> GetServiceDetails()
         {
             try
@@ -72,70 +72,6 @@ namespace Spectra.Controllers
             {
                 // Xử lý ngoại lệ ở đây, ví dụ log lại hoặc trả về lỗi phù hợp
                 Console.WriteLine($"Lỗi trong quá trình lấy dữ liệu dịch vụ: {ex.Message}");
-                throw; // Ném ngoại lệ để lớp điều khiển xử lý tiếp tục xử lý
-            }
-        }
-
-
-        [HttpGet]
-        [Route("getServiceId/{id}")]
-        [AllowAnonymous]
-        public async Task<IActionResult> GetServiceId([FromRoute] int? id)
-        {
-            try
-            {
-                if (!ModelState.IsValid)
-                {
-                    return BadRequest(ModelState);
-                }
-
-                string pattern = "[ ,+(){}.*+?^$|]";
-                Regex rgx = new Regex(pattern);
-
-                using (var context = _context) // Thay YourDbContext bằng tên thực của DbContext của bạn
-                {
-                    var data = await context.ServiceDetails
-                        .Join(context.Services, ai => ai.ServiceId, al => al.Id, (ai, al) => new
-                        {
-                            Id = ai.Id,
-                            Name = ai.Name,
-                            Code = ai.Code,
-                            Image = ai.Image,
-                            ServiceId = ai.ServiceId,
-                            ServiceName = al.Name,
-                            TitleSeo = al.TitleSeo,
-                            MetaKeyWords = al.MetaKeyWords,
-                            MetaDescription = al.MetaDescription,
-                            Description = ai.Description,
-                            Status = ai.Status,
-                            LinkName = rgx.Replace(ai.Name, "-").ToLower()
-                        })
-                        .Where(x => x.ServiceId == id)
-                        .Select(x => new ServiceDetailDisplay
-                        {
-                            Id = x.Id,
-                            Name = x.Name,
-                            Code = x.Code,
-                            Image = x.Image,
-                            ServiceId = x.ServiceId,
-                            ServiceName = x.ServiceName,
-                            Description = x.Description,
-                            TitleSeo = x.TitleSeo,
-                            MetaKeyWords = x.MetaKeyWords,
-                            MetaDescription = x.MetaDescription,
-                            Status = x.Status,
-                            LinkName = rgx.Replace(x.Name, "-").ToLower()
-                        })
-                        .Where(x => x.Status == true)
-                        .ToListAsync();
-
-                    return Ok(data);
-                }
-            }
-            catch (Exception ex)
-            {
-                // Xử lý ngoại lệ ở đây, ví dụ log lại hoặc trả về lỗi phù hợp
-                Console.WriteLine($"Lỗi trong quá trình lấy dữ liệu dịch vụ theo ID: {ex.Message}");
                 throw; // Ném ngoại lệ để lớp điều khiển xử lý tiếp tục xử lý
             }
         }
@@ -198,7 +134,7 @@ namespace Spectra.Controllers
         // PUT: api/ServiceDetail/5
         [HttpPost]
         [Route("PutServiceDetail")]
-        //[BinaryAuthorize("ServiceDetail", ActionType.Sua)]
+        [BinaryAuthorize("ServiceDetail", ActionType.Sua)]
         public async Task<IActionResult> PutServiceDetail([FromBody] ServiceDetail serviceDetail)
         {
             if (!ModelState.IsValid)
@@ -223,7 +159,7 @@ namespace Spectra.Controllers
 
         // POST: api/ServiceDetail
         [HttpPost]
-        //[BinaryAuthorize("ServiceDetail", ActionType.Them)]
+        [BinaryAuthorize("ServiceDetail", ActionType.Them)]
         public async Task<IActionResult> PostServiceDetail([FromBody] ServiceDetail serviceDetail)
         {
             if (!ModelState.IsValid)
@@ -239,7 +175,7 @@ namespace Spectra.Controllers
 
         // DELETE: api/ServiceDetail/5
         [HttpDelete("{id}")]
-        //[BinaryAuthorize("ServiceDetail", ActionType.Xoa)]
+        [BinaryAuthorize("ServiceDetail", ActionType.Xoa)]
         public async Task<IActionResult> DeleteServiceDetail([FromRoute] int? id)
         {
             if (!ModelState.IsValid)

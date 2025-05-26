@@ -9,6 +9,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Spectra.Models;
+using Spectra.Models.Authorize;
 
 namespace Spectra.Controllers
 {
@@ -27,7 +28,7 @@ namespace Spectra.Controllers
 
         // GET: api/Recrutement
         [HttpGet]
-        [AllowAnonymous]
+        [BinaryAuthorize("Recrutement", ActionType.Xem)]
         public IEnumerable<Recrutement> GetRecrutements()
         {
             string pattern = "[ ,+(){}.*+?^$|]";
@@ -144,6 +145,7 @@ namespace Spectra.Controllers
         // PUT: api/Recrutement/5
         [HttpPost]
         [Route("PutRecrutement")]
+        [BinaryAuthorize("Recrutement", ActionType.Sua)]
         public async Task<IActionResult> PutRecrutement([FromBody] Recrutement recrutement)
         {
             if (!ModelState.IsValid)
@@ -168,6 +170,7 @@ namespace Spectra.Controllers
 
         // POST: api/Recrutement
         [HttpPost]
+        [BinaryAuthorize("Recrutement", ActionType.Them)]
         public async Task<IActionResult> PostRecrutement([FromBody] Recrutement recrutement)
         {
             if (!ModelState.IsValid)
@@ -183,6 +186,7 @@ namespace Spectra.Controllers
 
         // DELETE: api/Recrutement/5
         [HttpDelete("{id}")]
+        [BinaryAuthorize("Recrutement", ActionType.Xoa)]
         public async Task<IActionResult> DeleteRecrutement([FromRoute] int? id)
         {
             if (!ModelState.IsValid)

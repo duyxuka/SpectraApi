@@ -41,7 +41,7 @@ namespace Spectra.Controllers
 
         // GET: api/AccountUser
         [HttpGet]
-        //[BinaryAuthorize("User", ActionType.Xem)]
+        [BinaryAuthorize("UserManager", ActionType.Xem)]
         public IEnumerable<AccountUser> GetAccountUsers()
         {
             return _context.AccountUsers
@@ -53,7 +53,7 @@ namespace Spectra.Controllers
 
         [HttpGet]
         [Route("getAll")]
-        [BinaryAuthorize("User", ActionType.Xem)]
+        [BinaryAuthorize("UserManager", ActionType.Xem)]
         public IEnumerable<AccountUser> GetAllAccountUsers()
         {
             return _context.AccountUsers
@@ -62,14 +62,12 @@ namespace Spectra.Controllers
                 {
                     Email = x.Email,
                     Phone = x.Phone
-            // Thêm các trường cần thiết khác nếu có
-        })
-                .ToList();
+                }).ToList();
         }
 
         [HttpGet]
         [Route("LoyalCustomers")]
-        [AllowAnonymous]
+        [BinaryAuthorize("Dashboard", ActionType.Xem)]
         public async Task<IActionResult> GetLoyalCustomers(int minOrders = 2, int months = 6)
         {
             // Kiểm tra tính hợp lệ của Model State
@@ -151,17 +149,9 @@ namespace Spectra.Controllers
             }
         }
 
-        [HttpGet]
-        [Route("TrashAccountUsers")]
-        [BinaryAuthorize("User", ActionType.Xoa)]
-        public IEnumerable<AccountUser> GetTrashAccountUsers()
-        {
-            return _context.AccountUsers.Where(b => b.Status == false);
-        }
-
         // GET: api/AccountUser/5
         [HttpGet("{id}")]
-        //[BinaryAuthorize("User", ActionType.Xem)]
+        [BinaryAuthorize("User", ActionType.Xem)]
         public async Task<IActionResult> GetAccountUser([FromRoute] int? id)
         {
             if (!ModelState.IsValid)
@@ -169,10 +159,24 @@ namespace Spectra.Controllers
                 return BadRequest(ModelState);
             }
             var userIdClaim = User.FindFirst("UserId")?.Value;
-
             if (string.IsNullOrEmpty(userIdClaim) || !int.TryParse(userIdClaim, out var userId))
             {
                 return Unauthorized();
+            }
+
+            // Kiểm tra quyền View cho module UserProfile (dành cho Customer) hoặc UserManager (dành cho Admin)
+            bool hasUserProfileViewPermission = HasPermission("User", 1); // 1 = View
+            bool isAdmin = HasPermission("UserManager", 1); // Admin có quyền View trên UserManager
+
+            if (!hasUserProfileViewPermission && !isAdmin)
+            {
+                return Forbid("Bạn không có quyền xem tài khoản này.");
+            }
+
+            // Nếu không phải Admin, chỉ cho phép xem tài khoản của chính mình
+            if (!isAdmin && userId != id)
+            {
+                return Forbid("Bạn chỉ có thể xem thông tin tài khoản của chính mình.");
             }
 
             var accountUser = await _context.AccountUsers.FindAsync(id);
@@ -189,14 +193,40 @@ namespace Spectra.Controllers
         // PUT: api/AccountUser/5
         [HttpPost]
         [Route("PutAccountUser")]
-        [AllowAnonymous]
-        //[BinaryAuthorize("User", ActionType.Sua)]
+        [BinaryAuthorize("User", ActionType.Sua)]
         public async Task<IActionResult> PutAccountUser([FromBody] AccountUser accountUser)
         {
             if (!ModelState.IsValid)
             {
                 return BadRequest(ModelState);
             }
+            var userIdClaim = User.FindFirst("UserId")?.Value;
+            if (string.IsNullOrEmpty(userIdClaim) || !int.TryParse(userIdClaim, out var userId))
+            {
+                return Unauthorized();
+            }
+
+            // Kiểm tra quyền Edit cho module UserProfile (dành cho Customer) hoặc UserManager (dành cho Admin)
+            bool hasUserProfileEditPermission = HasPermission("User", 5); // 5 = Edit
+            bool isAdmin = HasPermission("UserManager", 5); // Admin có quyền Edit trên UserManager
+
+            if (!hasUserProfileEditPermission && !isAdmin)
+            {
+                return Forbid("Bạn không có quyền chỉnh sửa tài khoản này.");
+            }
+
+            // Nếu không phải Admin, chỉ cho phép chỉnh sửa tài khoản của chính mình
+            if (!isAdmin && userId != accountUser.Id)
+            {
+                return Forbid("Bạn chỉ có thể chỉnh sửa thông tin tài khoản của chính mình.");
+            }
+
+            // Kiểm tra tài khoản có tồn tại không
+            var existingUser = await _context.AccountUsers.FindAsync(accountUser.Id);
+            if (existingUser == null)
+            {
+                return NotFound("Tài khoản không tồn tại.");
+            }
             _context.Entry(accountUser).State = EntityState.Modified;
 
             try
@@ -206,64 +236,20 @@ namespace Spectra.Controllers
             }
             catch (DbUpdateConcurrencyException)
             {
-
+                return StatusCode(500, "Lỗi đồng bộ hóa dữ liệu.");
             }
 
             return NoContent();
         }
-
-        [HttpPost]
-        [Route("RepeatAccountUsers")]
-        [BinaryAuthorize("User", ActionType.Xoa)]
-        public async Task<IActionResult> RepeatAccountUsers([FromBody] AccountUser accountUser)
+        private bool HasPermission(string module, int requiredPermission)
         {
-            if (!ModelState.IsValid)
-            {
-                return BadRequest(ModelState);
-            }
+            var permissionsClaim = User.FindFirst("Permissions")?.Value;
+            if (string.IsNullOrEmpty(permissionsClaim))
+                return false;
 
-            _context.Entry(accountUser).State = EntityState.Modified;
-
-            try
-            {
-                accountUser.Status = true;
-                accountUser.ModifiedDate = DateTime.Now;
-                await _context.SaveChangesAsync();
-            }
-            catch (DbUpdateConcurrencyException)
-            {
-
-            }
-
-            return NoContent();
+            var permissions = JsonConvert.DeserializeObject<Dictionary<string, int>>(permissionsClaim);
+            return permissions.ContainsKey(module) && (permissions[module] & requiredPermission) == requiredPermission;
         }
-
-        [HttpPost]
-        [Route("TemporaryDelete")]
-        [BinaryAuthorize("User", ActionType.Xoa)]
-        public async Task<IActionResult> TemporaryDelete([FromBody] AccountUser accountUser)
-        {
-            if (!ModelState.IsValid)
-            {
-                return BadRequest(ModelState);
-            }
-
-            _context.Entry(accountUser).State = EntityState.Modified;
-
-            try
-            {
-                accountUser.Status = false;
-                //categoryProduct.ModifiedDate = DateTime.Now;
-                await _context.SaveChangesAsync();
-            }
-            catch (DbUpdateConcurrencyException)
-            {
-
-            }
-
-            return NoContent();
-        }
-
         // POST: api/AccountUser
         [HttpPost]
         [AllowAnonymous]
@@ -351,7 +337,7 @@ namespace Spectra.Controllers
 
         [HttpGet]
         [Route("excel")]
-        //[BinaryAuthorize("User", ActionType.XuatFile)]
+        [BinaryAuthorize("UserManager", ActionType.XuatFile)]
         public async Task<FileResult> ExportExcel()
         {
             var data = await _context.AccountUsers.ToListAsync();
@@ -391,7 +377,7 @@ namespace Spectra.Controllers
         }
         // DELETE: api/AccountUser/5
         [HttpDelete("{id}")]
-        //[BinaryAuthorize("User", ActionType.Xoa)]
+        [BinaryAuthorize("UserManager", ActionType.Xoa)]
         public async Task<IActionResult> DeleteAccountUser([FromRoute] int? id)
         {
             if (!ModelState.IsValid)
@@ -501,23 +487,28 @@ namespace Spectra.Controllers
         // POST: api/AccountUsers/ChangePassword/1
         [HttpPost]
         [Route("ChangePassword/{id}")]
-        //[BinaryAuthorize("User", ActionType.Sua)]
+        [BinaryAuthorize("User", ActionType.Sua)]
         public async Task<IActionResult> ChangePassword([FromRoute] int? id, [FromBody] ChangePasswordDto model)
         {
-            var userIdFromToken = User.FindFirst("UserId")?.Value;
+            var userIdClaim = User.FindFirst("UserId")?.Value;
+            if (string.IsNullOrEmpty(userIdClaim) || !int.TryParse(userIdClaim, out var userId))
+            {
+                return Unauthorized();
+            }
 
-            if (userIdFromToken != id?.ToString())
-                return Forbid();
+            bool isAdmin = HasPermission("UserManager", 5); // Admin có quyền Edit trên UserManager
+            if (!isAdmin && userId != id)
+            {
+                return Forbid("Bạn chỉ có thể thay đổi mật khẩu của chính mình.");
+            }
 
             var user = await _context.AccountUsers.FindAsync(id);
             if (user == null)
                 return NotFound("Tài khoản không tồn tại.");
 
-            // Kiểm tra mật khẩu cũ
             if (!BCrypt.Net.BCrypt.Verify(model.PasswordOld, user.Password))
                 return BadRequest("Mật khẩu hiện tại không chính xác.");
 
-            // Cập nhật mật khẩu mới
             user.Password = BCrypt.Net.BCrypt.HashPassword(model.Password);
             await _context.SaveChangesAsync();
 

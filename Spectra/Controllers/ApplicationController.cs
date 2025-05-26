@@ -27,7 +27,7 @@ namespace Spectra.Controllers
 
         // GET: api/Application
         [HttpGet]
-        [AllowAnonymous]
+        [BinaryAuthorize("BenefitsandFeatures", ActionType.Xem)]
         public IEnumerable<ApplicationDisplay> GetApplications()
         {
             using (var context = _context) // Thay YourDbContext bằng tên thực của DbContext của bạn
@@ -71,7 +71,7 @@ namespace Spectra.Controllers
 
         // GET: api/Application/5
         [HttpGet("{id}")]
-        [AllowAnonymous]
+        [BinaryAuthorize("BenefitsandFeatures", ActionType.Xem)]
         public async Task<IActionResult> GetApplication([FromRoute] int? id)
         {
             if (!ModelState.IsValid)
@@ -130,6 +130,7 @@ namespace Spectra.Controllers
         // PUT: api/Application/5
         [HttpPost]
         [Route("PutApplication")]
+        [BinaryAuthorize("BenefitsandFeatures", ActionType.Sua)]
         public async Task<IActionResult> PutApplication([FromBody] Application application)
         {
             if (!ModelState.IsValid)
@@ -155,6 +156,7 @@ namespace Spectra.Controllers
 
         // POST: api/Application
         [HttpPost]
+        [BinaryAuthorize("BenefitsandFeatures", ActionType.Them)]
         public async Task<IActionResult> PostApplication([FromBody] Application application)
         {
             if (!ModelState.IsValid)
@@ -186,6 +188,7 @@ namespace Spectra.Controllers
 
         // DELETE: api/Application/5
         [HttpDelete("{id}")]
+        [BinaryAuthorize("BenefitsandFeatures", ActionType.Xoa)]
         public async Task<IActionResult> DeleteApplication([FromRoute] int? id)
         {
             if (!ModelState.IsValid)
