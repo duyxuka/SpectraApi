@@ -406,6 +406,65 @@ namespace Spectra.Controllers
             return Ok(order);
         }
 
+        [HttpPost]
+        [Route("CancelOrder/{id}")]
+        [BinaryAuthorize("Order", ActionType.Sua)] // Yêu cầu quyền chỉnh sửa
+        public async Task<IActionResult> CancelOrder([FromRoute] int? id)
+        {
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(ModelState);
+            }
+
+            if (id == null)
+            {
+                return BadRequest("Order ID is required.");
+            }
+
+            var userIdClaim = User.FindFirst("UserId")?.Value;
+            if (string.IsNullOrEmpty(userIdClaim) || !int.TryParse(userIdClaim, out var userId))
+            {
+                return Unauthorized();
+            }
+
+            var order = await _context.Order.FirstOrDefaultAsync(x => x.Id == id);
+            if (order == null)
+            {
+                return NotFound("Order not found.");
+            }
+
+            bool isAdmin = HasPermission("OrderManager", 1); // Kiểm tra quyền admin (xem)
+            if (!isAdmin && order.AccountUserId != userId)
+            {
+                return Forbid("Bạn chỉ có thể hủy đơn hàng của chính mình.");
+            }
+
+            if (order.Status == 3) // Giả sử Status = 3 là trạng thái "Đã hoàn thành"
+            {
+                return BadRequest("Đơn hàng đã hoàn thành, không thể hủy.");
+            }
+            if (order.Status == 4) // Giả sử Status = 4 là trạng thái "Đã hủy"
+            {
+                return BadRequest("Đơn hàng đã được hủy trước đó.");
+            }
+
+            // Cập nhật trạng thái đơn hàng thành "Đã hủy" (Status = 4)
+            order.Status = 4; 
+            order.ModifiedDate = DateTime.Now;
+
+            _context.Entry(order).State = EntityState.Modified;
+
+            try
+            {
+                await _context.SaveChangesAsync();
+                return Ok(new { message = "Đơn hàng đã được hủy thành công", order });
+            }
+            catch (DbUpdateConcurrencyException)
+            {
+                return StatusCode(500, new { message = "Lỗi khi cập nhật trạng thái đơn hàng" });
+            }
+        }
+
         // PUT: api/Orders/
         [HttpPost]
         [Route("PutOrder")]
@@ -432,6 +491,35 @@ namespace Spectra.Controllers
 
             return NoContent();
         }
+        
+        // POST: api/Orders
+        [HttpPost]
+        [BinaryAuthorize("Order", ActionType.Them)]
+        public async Task<IActionResult> PostOrder([FromBody] Order order)
+        {
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(ModelState);
+            }
+            // Lấy userId từ token JWT
+            var userIdClaim = User.FindFirst("UserId")?.Value;
+            if (string.IsNullOrEmpty(userIdClaim) || !int.TryParse(userIdClaim, out var userId))
+            {
+                return Unauthorized();
+            }
+
+            // Kiểm tra quyền admin
+            bool isAdmin = HasPermission("OrderManager", (int)ActionType.Them); // Admin có quyền Thêm OrderManager
+            if (!isAdmin && order.AccountUserId != userId)
+            {
+                return Forbid("Bạn chỉ có thể tạo đơn hàng cho chính mình.");
+            }
+            order.CreatedDate = DateTime.Now;
+            _context.Order.Add(order);
+            await _context.SaveChangesAsync();
+
+            return CreatedAtAction("GetOrder", new { id = order.Id }, order);
+        }
         private bool HasPermission(string module, int requiredPermission)
         {
             var permissionsClaim = User.FindFirst("Permissions")?.Value;
@@ -440,21 +528,6 @@ namespace Spectra.Controllers
 
             var permissions = JsonConvert.DeserializeObject<Dictionary<string, int>>(permissionsClaim);
             return permissions.ContainsKey(module) && (permissions[module] & requiredPermission) == requiredPermission;
-        }
-        // POST: api/Orders
-        [HttpPost]
-        [BinaryAuthorize("OrderManager", ActionType.Them)]
-        public async Task<IActionResult> PostOrder([FromBody] Order order)
-        {
-            if (!ModelState.IsValid)
-            {
-                return BadRequest(ModelState);
-            }
-            order.CreatedDate = DateTime.Now;
-            _context.Order.Add(order);
-            await _context.SaveChangesAsync();
-
-            return CreatedAtAction("GetOrder", new { id = order.Id }, order);
         }
 
         // DELETE: api/Order/5

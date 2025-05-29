@@ -97,8 +97,7 @@ namespace Spectra.Migrations
                     b.Property<string>("Name")
                         .HasMaxLength(250);
 
-                    b.Property<string>("Password")
-                        .IsRequired();
+                    b.Property<string>("Password");
 
                     b.Property<string>("Phone")
                         .IsRequired();
@@ -417,29 +416,6 @@ namespace Spectra.Migrations
                     b.ToTable("Spectra_ContactSeo");
                 });
 
-            modelBuilder.Entity("Spectra.Models.County", b =>
-                {
-                    b.Property<int?>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasAnnotation("SqlServer:ValueGenerationStrategy", SqlServerValueGenerationStrategy.IdentityColumn);
-
-                    b.Property<int?>("CityId");
-
-                    b.Property<DateTime>("CreatedDate");
-
-                    b.Property<DateTime>("ModifiedDate");
-
-                    b.Property<string>("Name");
-
-                    b.Property<bool>("Status");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("CityId");
-
-                    b.ToTable("Spectra_County");
-                });
-
             modelBuilder.Entity("Spectra.Models.ExperienceDay", b =>
                 {
                     b.Property<int?>("Id")
@@ -617,45 +593,6 @@ namespace Spectra.Migrations
                     b.ToTable("Spectra_ImageProduct");
                 });
 
-            modelBuilder.Entity("Spectra.Models.Item", b =>
-                {
-                    b.Property<int?>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasAnnotation("SqlServer:ValueGenerationStrategy", SqlServerValueGenerationStrategy.IdentityColumn);
-
-                    b.Property<int?>("AttributeId");
-
-                    b.Property<DateTime>("CreatedDate");
-
-                    b.Property<int?>("GiftId");
-
-                    b.Property<string>("JobId");
-
-                    b.Property<DateTime>("ModifiedDate");
-
-                    b.Property<float>("Price");
-
-                    b.Property<float>("PriceAgain");
-
-                    b.Property<int?>("ProductId");
-
-                    b.Property<bool>("Status");
-
-                    b.Property<int?>("ValueAttributeId");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("AttributeId");
-
-                    b.HasIndex("GiftId");
-
-                    b.HasIndex("ProductId");
-
-                    b.HasIndex("ValueAttributeId");
-
-                    b.ToTable("Spectra_Item");
-                });
-
             modelBuilder.Entity("Spectra.Models.Location", b =>
                 {
                     b.Property<int?>("Id")
@@ -688,6 +625,8 @@ namespace Spectra.Migrations
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
                         .HasAnnotation("SqlServer:ValueGenerationStrategy", SqlServerValueGenerationStrategy.IdentityColumn);
+
+                    b.Property<string>("Description");
 
                     b.Property<string>("Name")
                         .IsRequired()
@@ -812,46 +751,6 @@ namespace Spectra.Migrations
                     b.ToTable("Spectra_Order");
                 });
 
-            modelBuilder.Entity("Spectra.Models.OrderCus", b =>
-                {
-                    b.Property<int?>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasAnnotation("SqlServer:ValueGenerationStrategy", SqlServerValueGenerationStrategy.IdentityColumn);
-
-                    b.Property<int>("AccountCusId");
-
-                    b.Property<string>("Address")
-                        .HasMaxLength(250);
-
-                    b.Property<string>("Code")
-                        .HasMaxLength(250);
-
-                    b.Property<DateTime>("CreatedDate");
-
-                    b.Property<string>("Email")
-                        .IsRequired();
-
-                    b.Property<DateTime>("ModifiedDate");
-
-                    b.Property<string>("Name")
-                        .HasMaxLength(250);
-
-                    b.Property<string>("Note");
-
-                    b.Property<string>("Phone")
-                        .IsRequired();
-
-                    b.Property<byte>("Status");
-
-                    b.Property<int>("TotalAmount");
-
-                    b.Property<int>("TotalQuantity");
-
-                    b.HasKey("Id");
-
-                    b.ToTable("Spectra_OrderCus");
-                });
-
             modelBuilder.Entity("Spectra.Models.OrderDetail", b =>
                 {
                     b.Property<int?>("Id")
@@ -885,39 +784,6 @@ namespace Spectra.Migrations
                     b.HasIndex("ProductId");
 
                     b.ToTable("Spectra_OrderDetail");
-                });
-
-            modelBuilder.Entity("Spectra.Models.OrderDetailCus", b =>
-                {
-                    b.Property<int?>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasAnnotation("SqlServer:ValueGenerationStrategy", SqlServerValueGenerationStrategy.IdentityColumn);
-
-                    b.Property<string>("Brand");
-
-                    b.Property<DateTime>("CreatedDate");
-
-                    b.Property<string>("Gift");
-
-                    b.Property<DateTime>("ModifiedDate");
-
-                    b.Property<int>("OrderCusId");
-
-                    b.Property<float>("Price");
-
-                    b.Property<int>("ProductId");
-
-                    b.Property<int>("Quantity");
-
-                    b.Property<bool>("Status");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("OrderCusId");
-
-                    b.HasIndex("ProductId");
-
-                    b.ToTable("Spectra_OrderDetailCus");
                 });
 
             modelBuilder.Entity("Spectra.Models.PaymentInformationModel", b =>
@@ -1839,13 +1705,6 @@ namespace Spectra.Migrations
                         .HasForeignKey("CharacteristicId");
                 });
 
-            modelBuilder.Entity("Spectra.Models.County", b =>
-                {
-                    b.HasOne("Spectra.Models.City", "City")
-                        .WithMany("Counties")
-                        .HasForeignKey("CityId");
-                });
-
             modelBuilder.Entity("Spectra.Models.Feedback", b =>
                 {
                     b.HasOne("Spectra.Models.Product", "Product")
@@ -1858,25 +1717,6 @@ namespace Spectra.Migrations
                     b.HasOne("Spectra.Models.Product", "Product")
                         .WithMany()
                         .HasForeignKey("ProductId");
-                });
-
-            modelBuilder.Entity("Spectra.Models.Item", b =>
-                {
-                    b.HasOne("Spectra.Models.Attribute", "Attribute")
-                        .WithMany("Items")
-                        .HasForeignKey("AttributeId");
-
-                    b.HasOne("Spectra.Models.Gift", "Gift")
-                        .WithMany("Items")
-                        .HasForeignKey("GiftId");
-
-                    b.HasOne("Spectra.Models.Product", "Product")
-                        .WithMany("Items")
-                        .HasForeignKey("ProductId");
-
-                    b.HasOne("Spectra.Models.ValueAttribute", "ValueAttribute")
-                        .WithMany("Items")
-                        .HasForeignKey("ValueAttributeId");
                 });
 
             modelBuilder.Entity("Spectra.Models.Location", b =>
@@ -1910,19 +1750,6 @@ namespace Spectra.Migrations
                     b.HasOne("Spectra.Models.Order", "Order")
                         .WithMany("OrderDetails")
                         .HasForeignKey("OrderId")
-                        .OnDelete(DeleteBehavior.Cascade);
-
-                    b.HasOne("Spectra.Models.Product", "Product")
-                        .WithMany()
-                        .HasForeignKey("ProductId")
-                        .OnDelete(DeleteBehavior.Cascade);
-                });
-
-            modelBuilder.Entity("Spectra.Models.OrderDetailCus", b =>
-                {
-                    b.HasOne("Spectra.Models.OrderCus", "OrderCus")
-                        .WithMany("OrderDetailCus")
-                        .HasForeignKey("OrderCusId")
                         .OnDelete(DeleteBehavior.Cascade);
 
                     b.HasOne("Spectra.Models.Product", "Product")

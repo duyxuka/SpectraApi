@@ -121,7 +121,7 @@ namespace Spectra.Controllers
                 {
                     var senderEmail = new MailAddress("mayhutsuaspectra@gmail.com", "Spectra");
                     var receiverEmail = new MailAddress(email, "Receiver");
-                    var password = "mieopkmqngqmotfk";
+                    var password = "kdmlwkyeqazbxloo";
                     var subject = "Spectra Viet Nam - Cảm ơn bạn đã liên hệ với chúng tôi";
                     string body = "<div style='text-align: center;font-family: unset; font-size: 15px;'>"
                         + "<p style='text-align: center;'><img style='margin-left: 45px;' src='https://spectrababy.com.vn/assets/images/logo/logo_black_1x.png'></p>"

@@ -37,10 +37,7 @@ namespace Spectra.Controllers
             try
             {
                 var variantDtos = await _context.ProductVariants
-                    .Include(pv => pv.Product)
-                    .Include(pv => pv.ProductVariantAttributes)
-                        .ThenInclude(pva => pva.ValueAttribute)
-                            .ThenInclude(va => va.Attribute)
+                    .AsNoTracking()
                     .Select(pv => new VariantDto
                     {
                         VariantId = pv.Id,
@@ -49,12 +46,18 @@ namespace Spectra.Controllers
                         SalePrice = pv.SalePrice,
                         Status = pv.Status,
                         ProductName = pv.Product != null ? pv.Product.Name : "N/A",
-                        Attributes = pv.ProductVariantAttributes.Select(pva => new AttributeDto
-                        {
-                            AttributeName = pva.ValueAttribute != null ? pva.ValueAttribute.Attribute.Name : "N/A",
-                            ValueName = pva.ValueAttribute != null ? pva.ValueAttribute.Name : "N/A"
-                        }).ToList(),
-                        ValueName = pv.ProductVariantAttributes.FirstOrDefault().ValueAttribute != null ? pv.ProductVariantAttributes.FirstOrDefault().ValueAttribute.Name : "N/A"
+                        Attributes = pv.ProductVariantAttributes
+                            .Select(pva => new AttributeDto
+                            {
+                                AttributeName = pva.ValueAttribute != null && pva.ValueAttribute.Attribute != null
+                                    ? pva.ValueAttribute.Attribute.Name
+                                    : "N/A",
+                                ValueName = pva.ValueAttribute != null ? pva.ValueAttribute.Name : "N/A"
+                            })
+                            .ToList(),
+                        ValueName = pv.ProductVariantAttributes.Any() && pv.ProductVariantAttributes.First().ValueAttribute != null
+                            ? pv.ProductVariantAttributes.First().ValueAttribute.Name
+                            : "N/A"
                     })
                     .ToListAsync();
 
@@ -62,9 +65,9 @@ namespace Spectra.Controllers
             }
             catch (Exception ex)
             {
-                // Log the error
-                Console.WriteLine($"Error in GetProductVariants: {ex.Message}, StackTrace: {ex.StackTrace}");
-                return StatusCode(500, "Internal Server Error");
+                var errorMessage = $"Error in GetProductVariants: {ex.Message}, StackTrace: {ex.StackTrace}";
+                Console.WriteLine(errorMessage);
+                return StatusCode(500, "Internal Server Error: " + ex.Message);
             }
         }
 

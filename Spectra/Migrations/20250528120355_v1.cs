@@ -40,7 +40,7 @@ namespace Spectra.Migrations
                     Email = table.Column<string>(nullable: false),
                     Phone = table.Column<string>(nullable: false),
                     Status = table.Column<bool>(nullable: false),
-                    Password = table.Column<string>(nullable: false),
+                    Password = table.Column<string>(nullable: true),
                     CreatedDate = table.Column<DateTime>(nullable: false),
                     ModifiedDate = table.Column<DateTime>(nullable: false)
                 },
@@ -286,7 +286,8 @@ namespace Spectra.Migrations
                 {
                     Id = table.Column<int>(nullable: false)
                         .Annotation("SqlServer:ValueGenerationStrategy", SqlServerValueGenerationStrategy.IdentityColumn),
-                    Name = table.Column<string>(maxLength: 100, nullable: false)
+                    Name = table.Column<string>(maxLength: 100, nullable: false),
+                    Description = table.Column<string>(nullable: true)
                 },
                 constraints: table =>
                 {
@@ -309,30 +310,6 @@ namespace Spectra.Migrations
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_Spectra_NewSeo", x => x.Id);
-                });
-
-            migrationBuilder.CreateTable(
-                name: "Spectra_OrderCus",
-                columns: table => new
-                {
-                    Id = table.Column<int>(nullable: false)
-                        .Annotation("SqlServer:ValueGenerationStrategy", SqlServerValueGenerationStrategy.IdentityColumn),
-                    Code = table.Column<string>(maxLength: 250, nullable: true),
-                    Name = table.Column<string>(maxLength: 250, nullable: true),
-                    Address = table.Column<string>(maxLength: 250, nullable: true),
-                    Email = table.Column<string>(nullable: false),
-                    Phone = table.Column<string>(nullable: false),
-                    Note = table.Column<string>(nullable: true),
-                    TotalQuantity = table.Column<int>(nullable: false),
-                    TotalAmount = table.Column<int>(nullable: false),
-                    Status = table.Column<byte>(nullable: false),
-                    AccountCusId = table.Column<int>(nullable: false),
-                    CreatedDate = table.Column<DateTime>(nullable: false),
-                    ModifiedDate = table.Column<DateTime>(nullable: false)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_Spectra_OrderCus", x => x.Id);
                 });
 
             migrationBuilder.CreateTable(
@@ -772,29 +749,6 @@ namespace Spectra.Migrations
                 });
 
             migrationBuilder.CreateTable(
-                name: "Spectra_County",
-                columns: table => new
-                {
-                    Id = table.Column<int>(nullable: false)
-                        .Annotation("SqlServer:ValueGenerationStrategy", SqlServerValueGenerationStrategy.IdentityColumn),
-                    Name = table.Column<string>(nullable: true),
-                    Status = table.Column<bool>(nullable: false),
-                    CityId = table.Column<int>(nullable: true),
-                    CreatedDate = table.Column<DateTime>(nullable: false),
-                    ModifiedDate = table.Column<DateTime>(nullable: false)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_Spectra_County", x => x.Id);
-                    table.ForeignKey(
-                        name: "FK_Spectra_County_Spectra_City_CityId",
-                        column: x => x.CityId,
-                        principalTable: "Spectra_City",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Restrict);
-                });
-
-            migrationBuilder.CreateTable(
                 name: "Spectra_Location",
                 columns: table => new
                 {
@@ -1157,52 +1111,6 @@ namespace Spectra.Migrations
                 });
 
             migrationBuilder.CreateTable(
-                name: "Spectra_Item",
-                columns: table => new
-                {
-                    Id = table.Column<int>(nullable: false)
-                        .Annotation("SqlServer:ValueGenerationStrategy", SqlServerValueGenerationStrategy.IdentityColumn),
-                    ProductId = table.Column<int>(nullable: true),
-                    ValueAttributeId = table.Column<int>(nullable: true),
-                    AttributeId = table.Column<int>(nullable: true),
-                    Price = table.Column<float>(nullable: false),
-                    PriceAgain = table.Column<float>(nullable: false),
-                    GiftId = table.Column<int>(nullable: true),
-                    Status = table.Column<bool>(nullable: false),
-                    JobId = table.Column<string>(nullable: true),
-                    CreatedDate = table.Column<DateTime>(nullable: false),
-                    ModifiedDate = table.Column<DateTime>(nullable: false)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_Spectra_Item", x => x.Id);
-                    table.ForeignKey(
-                        name: "FK_Spectra_Item_Spectra_Attribute_AttributeId",
-                        column: x => x.AttributeId,
-                        principalTable: "Spectra_Attribute",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Restrict);
-                    table.ForeignKey(
-                        name: "FK_Spectra_Item_Spectra_Gift_GiftId",
-                        column: x => x.GiftId,
-                        principalTable: "Spectra_Gift",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Restrict);
-                    table.ForeignKey(
-                        name: "FK_Spectra_Item_Spectra_Product_ProductId",
-                        column: x => x.ProductId,
-                        principalTable: "Spectra_Product",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Restrict);
-                    table.ForeignKey(
-                        name: "FK_Spectra_Item_Spectra_ValueAttribute_ValueAttributeId",
-                        column: x => x.ValueAttributeId,
-                        principalTable: "Spectra_ValueAttribute",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Restrict);
-                });
-
-            migrationBuilder.CreateTable(
                 name: "Spectra_OrderDetail",
                 columns: table => new
                 {
@@ -1230,39 +1138,6 @@ namespace Spectra.Migrations
                         onDelete: ReferentialAction.Cascade);
                     table.ForeignKey(
                         name: "FK_Spectra_OrderDetail_Spectra_Product_ProductId",
-                        column: x => x.ProductId,
-                        principalTable: "Spectra_Product",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
-                });
-
-            migrationBuilder.CreateTable(
-                name: "Spectra_OrderDetailCus",
-                columns: table => new
-                {
-                    Id = table.Column<int>(nullable: false)
-                        .Annotation("SqlServer:ValueGenerationStrategy", SqlServerValueGenerationStrategy.IdentityColumn),
-                    ProductId = table.Column<int>(nullable: false),
-                    Quantity = table.Column<int>(nullable: false),
-                    Gift = table.Column<string>(nullable: true),
-                    Brand = table.Column<string>(nullable: true),
-                    Price = table.Column<float>(nullable: false),
-                    Status = table.Column<bool>(nullable: false),
-                    OrderCusId = table.Column<int>(nullable: false),
-                    CreatedDate = table.Column<DateTime>(nullable: false),
-                    ModifiedDate = table.Column<DateTime>(nullable: false)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_Spectra_OrderDetailCus", x => x.Id);
-                    table.ForeignKey(
-                        name: "FK_Spectra_OrderDetailCus_Spectra_OrderCus_OrderCusId",
-                        column: x => x.OrderCusId,
-                        principalTable: "Spectra_OrderCus",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
-                    table.ForeignKey(
-                        name: "FK_Spectra_OrderDetailCus_Spectra_Product_ProductId",
                         column: x => x.ProductId,
                         principalTable: "Spectra_Product",
                         principalColumn: "Id",
@@ -1513,11 +1388,6 @@ namespace Spectra.Migrations
                 column: "CharacteristicId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_Spectra_County_CityId",
-                table: "Spectra_County",
-                column: "CityId");
-
-            migrationBuilder.CreateIndex(
                 name: "IX_Spectra_Feedback_ProductId",
                 table: "Spectra_Feedback",
                 column: "ProductId");
@@ -1526,26 +1396,6 @@ namespace Spectra.Migrations
                 name: "IX_Spectra_ImageProduct_ProductId",
                 table: "Spectra_ImageProduct",
                 column: "ProductId");
-
-            migrationBuilder.CreateIndex(
-                name: "IX_Spectra_Item_AttributeId",
-                table: "Spectra_Item",
-                column: "AttributeId");
-
-            migrationBuilder.CreateIndex(
-                name: "IX_Spectra_Item_GiftId",
-                table: "Spectra_Item",
-                column: "GiftId");
-
-            migrationBuilder.CreateIndex(
-                name: "IX_Spectra_Item_ProductId",
-                table: "Spectra_Item",
-                column: "ProductId");
-
-            migrationBuilder.CreateIndex(
-                name: "IX_Spectra_Item_ValueAttributeId",
-                table: "Spectra_Item",
-                column: "ValueAttributeId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_Spectra_Location_CityId",
@@ -1582,16 +1432,6 @@ namespace Spectra.Migrations
             migrationBuilder.CreateIndex(
                 name: "IX_Spectra_OrderDetail_ProductId",
                 table: "Spectra_OrderDetail",
-                column: "ProductId");
-
-            migrationBuilder.CreateIndex(
-                name: "IX_Spectra_OrderDetailCus_OrderCusId",
-                table: "Spectra_OrderDetailCus",
-                column: "OrderCusId");
-
-            migrationBuilder.CreateIndex(
-                name: "IX_Spectra_OrderDetailCus_ProductId",
-                table: "Spectra_OrderDetailCus",
                 column: "ProductId");
 
             migrationBuilder.CreateIndex(
@@ -1747,9 +1587,6 @@ namespace Spectra.Migrations
                 name: "Spectra_ContactSeo");
 
             migrationBuilder.DropTable(
-                name: "Spectra_County");
-
-            migrationBuilder.DropTable(
                 name: "Spectra_ExperienceDay");
 
             migrationBuilder.DropTable(
@@ -1765,9 +1602,6 @@ namespace Spectra.Migrations
                 name: "Spectra_ImageProduct");
 
             migrationBuilder.DropTable(
-                name: "Spectra_Item");
-
-            migrationBuilder.DropTable(
                 name: "Spectra_NewsDetail");
 
             migrationBuilder.DropTable(
@@ -1775,9 +1609,6 @@ namespace Spectra.Migrations
 
             migrationBuilder.DropTable(
                 name: "Spectra_OrderDetail");
-
-            migrationBuilder.DropTable(
-                name: "Spectra_OrderDetailCus");
 
             migrationBuilder.DropTable(
                 name: "Spectra_Payment");
@@ -1850,9 +1681,6 @@ namespace Spectra.Migrations
 
             migrationBuilder.DropTable(
                 name: "Spectra_Order");
-
-            migrationBuilder.DropTable(
-                name: "Spectra_OrderCus");
 
             migrationBuilder.DropTable(
                 name: "Spectra_Modules");

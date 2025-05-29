@@ -79,6 +79,59 @@ namespace Spectra.Controllers
             }
         }
 
+        [HttpGet]
+        [Route("getCategoryId/{id}")]
+        [AllowAnonymous]
+        public async Task<IActionResult> GetCategoryId([FromRoute] int? id)
+        {
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(ModelState);
+            }
+
+            try
+            {
+                using (var context = _context) // Thay YourDbContext bằng tên thực của DbContext của bạn
+                {
+                    string pattern = "[ ,+(){}.*+?^$|]";
+                    Regex rgx = new Regex(pattern);
+
+                    var data = await context.NewsDetails
+                        .AsNoTracking()
+                        .Where(x => x.CategoryId == id && x.Status == true)
+                        .Select(x => new NewsDetailDisplay
+                        {
+                            Id = x.Id,
+                            Name = x.Name,
+                            Code = x.Code,
+                            Image = x.Image,
+                            CategoryId = x.CategoryId,
+                            Description = x.Description.Substring(0, 120),
+                            Status = x.Status,
+                            TitleSeo = x.TitleSeo,
+                            MetaKeyWords = x.MetaKeyWords,
+                            MetaDescription = x.MetaDescription,
+                            CreatedDate = x.CreatedDate,
+                            LinkName = rgx.Replace(x.Name, "-").ToLower()
+                        })
+                        .Take(3)
+                        .ToListAsync();
+
+                    if (data == null || data.Count == 0)
+                    {
+                        return NotFound();
+                    }
+
+                    return Ok(data);
+                }
+            }
+            catch (Exception ex)
+            {
+                // Xử lý ngoại lệ ở đây, ví dụ: logging, trả về lỗi phù hợp với yêu cầu
+                Console.WriteLine($"Lỗi xảy ra trong GetCategoryId: {ex.Message}");
+                return StatusCode(500, "Lỗi server, vui lòng thử lại sau.");
+            }
+        }
 
         [HttpGet]
         [Route("search")]

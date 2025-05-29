@@ -200,6 +200,7 @@ namespace Spectra.Controllers
             {
                 return BadRequest(ModelState);
             }
+
             var userIdClaim = User.FindFirst("UserId")?.Value;
             if (string.IsNullOrEmpty(userIdClaim) || !int.TryParse(userIdClaim, out var userId))
             {
@@ -207,9 +208,8 @@ namespace Spectra.Controllers
             }
 
             // Kiểm tra quyền Edit cho module UserProfile (dành cho Customer) hoặc UserManager (dành cho Admin)
-            bool hasUserProfileEditPermission = HasPermission("User", 5); // 5 = Edit
-            bool isAdmin = HasPermission("UserManager", 5); // Admin có quyền Edit trên UserManager
-
+            bool hasUserProfileEditPermission = HasPermission("User", 4); // 4 = Edit
+            bool isAdmin = HasPermission("UserManager", 4); // Admin có quyền Edit trên UserManager
             if (!hasUserProfileEditPermission && !isAdmin)
             {
                 return Forbid("Bạn không có quyền chỉnh sửa tài khoản này.");
@@ -227,19 +227,30 @@ namespace Spectra.Controllers
             {
                 return NotFound("Tài khoản không tồn tại.");
             }
-            _context.Entry(accountUser).State = EntityState.Modified;
+
+            // Cập nhật các thuộc tính từ accountUser
+            existingUser.Code = accountUser.Code;
+            existingUser.Name = accountUser.Name;
+            existingUser.Email = accountUser.Email;
+            existingUser.Phone = accountUser.Phone;
+            existingUser.Status = accountUser.Status;
+            existingUser.ModifiedDate = DateTime.Now;
+
+            // Băm mật khẩu nếu được cung cấp
+            if (!string.IsNullOrEmpty(accountUser.Password))
+            {
+                existingUser.Password = BCrypt.Net.BCrypt.HashPassword(accountUser.Password);
+            }
 
             try
             {
-                accountUser.ModifiedDate = DateTime.Now;
                 await _context.SaveChangesAsync();
+                return NoContent();
             }
             catch (DbUpdateConcurrencyException)
             {
                 return StatusCode(500, "Lỗi đồng bộ hóa dữ liệu.");
             }
-
-            return NoContent();
         }
         private bool HasPermission(string module, int requiredPermission)
         {
@@ -304,7 +315,7 @@ namespace Spectra.Controllers
                     {
                         RolesId = role.Id,
                         ModulesId = orderModule.Id,
-                        PermissionValue = 1 // View
+                        PermissionValue = 7 // View+Add+Edit
                     });
                 }
 
@@ -315,7 +326,7 @@ namespace Spectra.Controllers
                     {
                         RolesId = role.Id,
                         ModulesId = userModule.Id,
-                        PermissionValue = 5 // Edit
+                        PermissionValue = 5 // Edit and View
                     });
                 }
 
@@ -472,7 +483,7 @@ namespace Spectra.Controllers
                 issuer: _configuration["Jwt:Issuer"],
                 audience: _configuration["Jwt:Audience"],
                 claims: claims,
-                expires: DateTime.UtcNow.AddHours(6),
+                expires: DateTime.UtcNow.AddDays(1),
                 signingCredentials: creds
             );
 
@@ -515,12 +526,21 @@ namespace Spectra.Controllers
             return NoContent();
         }
 
+        public class ForgotEmailRequest
+        {
+            public string Email { get; set; }
+        }
 
         [HttpPost]
         [Route("SendEmail")]
         [AllowAnonymous]
-        public ActionResult SendEmail([FromBody] string email)
+        public ActionResult SendEmail([FromBody] ForgotEmailRequest request)
         {
+            if (string.IsNullOrEmpty(request?.Email))
+            {
+                return BadRequest("Email is required.");
+            }
+
             const string chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
             string new_pass = new string(Enumerable.Repeat(chars, 8)
                 .Select(s => s[random.Next(s.Length)]).ToArray());
@@ -528,54 +548,59 @@ namespace Spectra.Controllers
             {
                 if (ModelState.IsValid)
                 {
-                    var account = _context.AccountUsers.Where(p => p.Email == email).FirstOrDefault();
+                    var account = _context.AccountUsers.FirstOrDefault(p => p.Email == request.Email);
                     if (account == null)
                     {
                         return NotFound("Email not exist");
                     }
-                    else
+
+                    var senderEmail = new MailAddress("mayhutsuaspectra@gmail.com", "Spectra");
+                    var receiverEmail = new MailAddress(request.Email, "Receiver");
+                    var password = "kdmlwkyeqazbxloo"; // Cần thay bằng App Password hợp lệ
+                    var subject = "Thư yêu cầu thay đổi mật khẩu của bạn";
+                    var body = "<p>Xin chào,</p>" +
+                               "<p>Bạn đã yêu cầu đặt lại mật khẩu của mình.</p>" +
+                               "<p>Mật khẩu mới của bạn là: <b>" + new_pass + "</b></p>" +
+                               "<h3 style='color: red;'><i>Vui lòng không chia sẻ email này cho bất kì ai!</i></h3>";
+
+                    var smtp = new SmtpClient
                     {
-                        var senderEmail = new MailAddress("mayhutsuaspectra@gmail.com", "Spectra");
-                        var receiverEmail = new MailAddress(email, "Receiver");
-                        var password = "mieopkmqngqmotfk";
-                        var subject = "Thư yêu cầu thay đổi mật khẩu của bạn";
-                        var body = "<p>Xin chào,</p>" + "<p>Bạn đã yêu cầu đặt lại mật khẩu của mình.</p>"
-                        + "<p> bên dưới để thay đổi mật khẩu của bạn:</p>"
-                        + "<h4>Mật khẩu mới của bạn là : <b>" + new_pass + "</b></h4>"
-                        + "<h3 style='color: red;'><i>Vui lòng không chia sẻ email này cho bất kì ai!</i></h3>"
-                        + "<br><p>Liên kết này sẽ hết hạn trong vòng một giờ tới. "
-                        + "<b>(If this is a spam message, please click  it is not spam)<b>";
-                        var smtp = new SmtpClient
-                        {
-                            Host = "smtp.gmail.com",
-                            Port = 587,
-                            EnableSsl = true,
-                            DeliveryMethod = SmtpDeliveryMethod.Network,
-                            UseDefaultCredentials = false,
-                            Credentials = new NetworkCredential(senderEmail.Address, password)
-                        };
-                        using (var mess = new MailMessage(senderEmail, receiverEmail)
-                        {
-                            Subject = subject,
-                            Body = body,
-                            IsBodyHtml = true
-                        })
-                        {
-                            smtp.Send(mess);
-                        }
-                        account.Password = BCrypt.Net.BCrypt.HashPassword(new_pass);
-                        _context.Update(account);
-                        _context.SaveChanges();
+                        Host = "smtp.gmail.com",
+                        Port = 587,
+                        EnableSsl = true,
+                        DeliveryMethod = SmtpDeliveryMethod.Network,
+                        UseDefaultCredentials = false,
+                        Credentials = new NetworkCredential(senderEmail.Address, password)
+                    };
+
+                    using (var mess = new MailMessage(senderEmail, receiverEmail)
+                    {
+                        Subject = subject,
+                        Body = body,
+                        IsBodyHtml = true
+                    })
+                    {
+                        smtp.Send(mess);
+                        Console.WriteLine($"Email sent successfully to {request.Email}");
                     }
+
+                    account.Password = BCrypt.Net.BCrypt.HashPassword(new_pass);
+                    _context.Update(account);
+                    _context.SaveChanges();
+
                     return NoContent();
                 }
+                return BadRequest(ModelState);
             }
             catch (Exception ex)
             {
-                Console.WriteLine("Error: " + ex.Message);
-                return StatusCode(500, "Internal Server Error");
+                Console.WriteLine($"Error sending email to {request.Email}: {ex.Message}");
+                if (ex.InnerException != null)
+                {
+                    Console.WriteLine($"Inner exception: {ex.InnerException.Message}");
+                }
+                return StatusCode(500, $"Failed to send email: {ex.Message}");
             }
-            return NoContent();
         }
 
         [HttpPost]

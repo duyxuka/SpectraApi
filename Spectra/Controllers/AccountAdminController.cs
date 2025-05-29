@@ -247,65 +247,64 @@ namespace Spectra.Controllers
                 return BadRequest("RoleIds are required.");
             }
 
+            if (accountId.HasValue && accountId <= 0)
+            {
+                return BadRequest("Invalid accountId.");
+            }
+
             try
             {
-                // Lấy tất cả modules
+                // Lấy tất cả modules và lưu vào dictionary để tăng tốc độ ánh xạ
                 var modules = await _context.Modules
-                    .Select(m => new
-                    {
-                        m.Id,
-                        m.Name,
-                        m.Description
-                    })
-                    .ToListAsync();
+                    .AsNoTracking()
+                    .Select(m => new { m.Id, m.Name, m.Description })
+                    .ToDictionaryAsync(m => m.Id, m => new { m.Name, m.Description });
 
                 // Lấy quyền từ vai trò
-                var rolePermissions = await _context.Permissions
+                var rolePermissionsTask = _context.Permissions
+                    .AsNoTracking()
                     .Where(p => roleIds.Contains(p.RolesId))
-                    .Select(p => new PermissionDetail
-                    {
-                        ModulesId = p.ModulesId,
-                        PermissionValue = p.PermissionValue
-                    })
+                    .Select(p => new PermissionDetail { ModulesId = p.ModulesId, PermissionValue = p.PermissionValue })
                     .ToListAsync();
 
-                List<PermissionDetail> accountPermissions = new List<PermissionDetail>();
-                if (accountId.HasValue)
-                {
-                    accountPermissions = await _context.AccountPermissions
+                // Lấy quyền từ tài khoản (nếu có accountId)
+                Task<List<PermissionDetail>> accountPermissionsTask = accountId.HasValue
+                    ? _context.AccountPermissions
+                        .AsNoTracking()
                         .Where(ap => ap.AccountAdminId == accountId.Value)
-                        .Select(ap => new PermissionDetail
-                        {
-                            ModulesId = ap.ModulesId,
-                            PermissionValue = ap.PermissionValue
-                        })
-                        .ToListAsync();
-                }
+                        .Select(ap => new PermissionDetail { ModulesId = ap.ModulesId, PermissionValue = ap.PermissionValue })
+                        .ToListAsync()
+                    : Task.FromResult(new List<PermissionDetail>());
 
-                // Tổng hợp quyền
+                // Chờ cả hai truy vấn hoàn tất
+                await Task.WhenAll(rolePermissionsTask, accountPermissionsTask);
+
+                var rolePermissions = rolePermissionsTask.Result;
+                var accountPermissions = accountPermissionsTask.Result;
+
+                // Tổng hợp quyền theo ModulesId
                 var allPermissions = rolePermissions.Concat(accountPermissions)
                     .GroupBy(p => p.ModulesId)
-                    .Select(g => new
-                    {
-                        ModulesId = g.Key,
-                        PermissionValue = g.Aggregate(0, (acc, p) => acc | p.PermissionValue)
-                    })
-                    .ToList();
+                    .ToDictionary(
+                        g => g.Key,
+                        g => g.Aggregate(0, (acc, p) => acc | p.PermissionValue));
 
                 // Ánh xạ với modules
                 var result = modules.Select(m => new
                 {
-                    ModulesId = m.Id,
-                    ModuleName = m.Name,
-                    Description = m.Description,
-                    PermissionValue = allPermissions.FirstOrDefault(p => p.ModulesId == m.Id)?.PermissionValue ?? 0
+                    ModulesId = m.Key,
+                    ModuleName = m.Value.Name,
+                    Description = m.Value.Description,
+                    PermissionValue = allPermissions.TryGetValue(m.Key, out var value) ? value : 0
                 }).ToList();
 
                 return Ok(result);
             }
             catch (Exception ex)
             {
-                Console.WriteLine(ex.ToString());
+                // Log chi tiết hơn
+                var errorMessage = $"Error in GetPermissionsByRoles: {ex.Message}, StackTrace: {ex.StackTrace}";
+                Console.WriteLine(errorMessage);
                 return StatusCode(500, "Internal Server Error: " + ex.Message);
             }
         }

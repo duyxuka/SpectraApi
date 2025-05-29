@@ -52,17 +52,7 @@ namespace Spectra
             services.AddSingleton<IIpPolicyStore, MemoryCacheIpPolicyStore>();
             services.AddSingleton<IRateLimitCounterStore, MemoryCacheRateLimitCounterStore>();
             services.AddSingleton<IRateLimitConfiguration, RateLimitConfiguration>();
-            // xác thực người dùng
-            services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
-                .AddCookie(option =>
-                {
-                    option.Events.OnRedirectToLogin = (context) =>
-                    {
-                        context.Response.StatusCode = 401;
-                        return Task.CompletedTask;
-                    };
 
-                });
 
             services.AddSwaggerGen(c =>
             {
@@ -93,7 +83,7 @@ namespace Spectra
                 });
             });
 
-            services.AddCors(c => c.AddPolicy("AddCors", builder => builder.WithOrigins("https://spectrababy.com.vn", "https://spectra.vn", "https://admin.spectrababy.com.vn", "https://spectrababy.vn", "https://spectra.com.vn", "https://adicon.vn", "http://localhost:4200", "http://localhost:55542").AllowAnyHeader().AllowAnyMethod().AllowCredentials()));
+            services.AddCors(c => c.AddPolicy("AddCors", builder => builder.WithOrigins("https://spectrababy.com.vn", "https://spectra.vn", "https://admin.spectrababy.com.vn", "https://spectrababy.vn", "https://spectra.com.vn", "https://adicon.vn","http://localhost:4200", "http://localhost:56401").AllowAnyHeader().AllowAnyMethod().AllowCredentials()));
             services.AddCors(c => c.AddPolicy("AddCorsIPN", builder => builder.SetIsOriginAllowed(origin =>
             {
                  //Convert domain to IP 
@@ -115,7 +105,7 @@ namespace Spectra
             };
 
                 return ipAddresses.Any(ip => allowedIPs.Contains(ip));
-            }).WithOrigins("https://spectrababy.com.vn","https://spectra.vn", "https://admin.spectrababy.com.vn", "https://spectrababy.vn", "https://spectra.com.vn", "https://adicon.vn", "http://localhost:4200", "http://localhost:52059").AllowAnyHeader().AllowAnyMethod().AllowCredentials()));
+            }).WithOrigins("https://spectrababy.com.vn","https://spectra.vn", "https://admin.spectrababy.com.vn", "https://spectrababy.vn", "https://spectra.com.vn", "https://adicon.vn").AllowAnyHeader().AllowAnyMethod().AllowCredentials()));
             services.AddScoped<FileServices>();
             services.Configure<FormOptions>(o =>
             {
@@ -123,10 +113,10 @@ namespace Spectra
                 o.MultipartBodyLengthLimit = int.MaxValue;
                 o.MemoryBufferThreshold = int.MaxValue;
             });
-            services.AddAuthentication(opt => {
-                opt.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
-                opt.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
-                opt.DefaultScheme = JwtBearerDefaults.AuthenticationScheme;
+            services.AddAuthentication(options =>
+            {
+                options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
+                options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
             })
             .AddJwtBearer(options =>
             {
@@ -142,7 +132,16 @@ namespace Spectra
                     ValidAudience = "http://localhost:50925/",
                     IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes("this is my custom Secret key for authentication"))
                 };
+            })
+            .AddCookie(options =>
+            {
+                options.Events.OnRedirectToLogin = context =>
+                {
+                    context.Response.StatusCode = 401;
+                    return Task.CompletedTask;
+                };
             });
+
 
             services.Configure<GzipCompressionProviderOptions>(options => options.Level = CompressionLevel.Fastest);
             services.AddResponseCaching();
@@ -166,7 +165,6 @@ namespace Spectra
                 var connectionString = sp.GetRequiredService<IConfiguration>().GetConnectionString("DbConnect");
                 config.UseSqlServerStorage(connectionString);
             });
-            services.AddHangfireServer();
             services.AddHangfireServer(options =>
             {
                 options.WorkerCount = 100; // Số lượng worker tùy theo nhu cầu của bạn
@@ -186,7 +184,7 @@ namespace Spectra
                 app.UseExceptionHandler("/Home/Error");
                 app.UseHsts();
             }
-            
+
             app.UseResponseCompression();
             app.UseHttpsRedirection();
             app.UseStaticFiles();
@@ -196,8 +194,8 @@ namespace Spectra
             app.UseDefaultFiles();
 
             app.UseAuthentication();
+            //app.UseAuthorization(); // Bật lại nếu bạn dùng chính sách hoặc [Authorize]
             app.UseIpRateLimiting();
-            //app.UseAuthorization(); 
             app.UseHangfireDashboard("/job-spectra", new DashboardOptions
             {
                 DashboardTitle = "Hangfire Job Spectra",

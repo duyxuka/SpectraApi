@@ -15,7 +15,7 @@ namespace Spectra.Controllers
     [EnableCors("AddCors")]
     [Route("api/[controller]")]
     [ApiController]
-    //[Authorize]
+    [Authorize]
     public class LocationController : ControllerBase
     {
         private readonly AppDBContext _context;

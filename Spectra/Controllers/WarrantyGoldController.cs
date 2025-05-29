@@ -98,7 +98,7 @@ namespace Spectra.Controllers
 
         [HttpGet]
         [Route("excel")]
-        [BinaryAuthorize("WarrantyGold", ActionType.Sua)]
+        [BinaryAuthorize("WarrantyGold", ActionType.XuatFile)]
         public async Task<FileResult> ExportExcel()
         {
             var data = await _context.WarrantyGolds.ToListAsync();

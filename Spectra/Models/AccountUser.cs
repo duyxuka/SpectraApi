@@ -25,7 +25,6 @@ namespace Spectra.Models
         public string Phone { get; set; }
         [DefaultValue(true)]
         public bool Status { get; set; }
-        [Required(ErrorMessage = "This field can't empty")]
         public string Password { get; set; }
         public DateTime CreatedDate { get; set; }
         public DateTime ModifiedDate { get; set; }

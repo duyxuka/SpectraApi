@@ -243,16 +243,6 @@ namespace Spectra.Controllers
             return Ok(result);
         }
 
-        private bool HasPermission(string module, int requiredPermission)
-        {
-            var permissionsClaim = User.FindFirst("Permissions")?.Value;
-            if (string.IsNullOrEmpty(permissionsClaim))
-                return false;
-
-            var permissions = JsonConvert.DeserializeObject<Dictionary<string, int>>(permissionsClaim);
-            return permissions.ContainsKey(module) && (permissions[module] & requiredPermission) == requiredPermission;
-        }
-
         // PUT: api/OrderDetails/5
         [HttpPost]
         [Route("PutProductQuantity")]
@@ -281,23 +271,54 @@ namespace Spectra.Controllers
 
         // POST: api/OrderDetails
         [HttpPost]
-        [BinaryAuthorize("OrderManager", ActionType.Them)]
+        [BinaryAuthorize("Order", ActionType.Them)]
         public async Task<IActionResult> PostOrderDetail([FromBody] OrderDetail orderDetail)
         {
             if (!ModelState.IsValid)
             {
                 return BadRequest(ModelState);
             }
+            // Lấy userId từ token JWT
+            var userIdClaim = User.FindFirst("UserId")?.Value;
+            if (string.IsNullOrEmpty(userIdClaim) || !int.TryParse(userIdClaim, out var userId))
+            {
+                return Unauthorized();
+            }
+
+            // Kiểm tra quyền admin
+            bool isAdmin = HasPermission("OrderManager", (int)ActionType.Them); // Admin có quyền Thêm OrderManager
+            if (!isAdmin)
+            {
+                // Kiểm tra nếu OrderId tồn tại và khớp với userId
+                var order = await _context.Order.FindAsync(orderDetail.OrderId);
+                if (order == null)
+                {
+                    return NotFound("Đơn hàng không tồn tại.");
+                }
+                if (order.AccountUserId != userId)
+                {
+                    return Forbid("Bạn chỉ có thể tạo chi tiết đơn hàng cho đơn hàng của chính mình.");
+                }
+            }
             orderDetail.CreatedDate = DateTime.Now;
             orderDetail.ModifiedDate = DateTime.Now;
             _context.OrderDetail.Add(orderDetail);
             await _context.SaveChangesAsync();
-            return CreatedAtAction("GetOrderDetail", new { id = orderDetail.Id }, orderDetail);
+            return CreatedAtAction("GetOrderDetail", new { id = orderDetail.Id }, new { id = orderDetail.Id });
         }
 
+        private bool HasPermission(string module, int requiredPermission)
+        {
+            var permissionsClaim = User.FindFirst("Permissions")?.Value;
+            if (string.IsNullOrEmpty(permissionsClaim))
+                return false;
+
+            var permissions = JsonConvert.DeserializeObject<Dictionary<string, int>>(permissionsClaim);
+            return permissions.ContainsKey(module) && (permissions[module] & requiredPermission) == requiredPermission;
+        }
         [HttpPost]
         [Route("SendEmailCancel")]
-        [BinaryAuthorize("OrderDetail", ActionType.Sua)]
+        [BinaryAuthorize("OrderManager", ActionType.Sua)]
         public ActionResult SendEmailCancel([FromBody] OrderEmailDto orderEmail)
         {
             try
@@ -306,7 +327,7 @@ namespace Spectra.Controllers
                 {
                     var senderEmail = new MailAddress("mayhutsuaspectra@gmail.com", "Spectra");
                     var receiverEmail = new MailAddress(orderEmail.Email, "Receiver");
-                    var password = "mieopkmqngqmotfk";
+                    var password = "kdmlwkyeqazbxloo";
                     var subject = "[Spectra]Xác nhận hủy đơn hàng #" + orderEmail.Code;
                     var body = "<p style='text-align: center;'><img style='margin-left: 45px;' src='https://spectrababy.com.vn/assets/images/logo/logo_black_1x.png'></p>"
                     + "<h2 style='text-align: center;'>Đơn hàng của bạn đã được hủy</h2>"
@@ -357,7 +378,7 @@ namespace Spectra.Controllers
                 {
                     var senderEmail = new MailAddress("mayhutsuaspectra@gmail.com", "Spectra");
                     var receiverEmail = new MailAddress(orderEmail.Email, "Receiver");
-                    var password = "mieopkmqngqmotfk";
+                    var password = "kdmlwkyeqazbxloo";
                     var subject = "Đơn đặt hàng Spectra";
 
                     // Fetch product details for the order

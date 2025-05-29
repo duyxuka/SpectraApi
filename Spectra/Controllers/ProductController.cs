@@ -725,7 +725,11 @@ namespace Spectra.Controllers
                     Images = x.gt.ai.Images,
                     CategoryId = x.gt.ai.CategoryId,
                     GiftId = x.gt.ai.GiftId,
-                    TitleDescription = x.gt.ai.TitleDescription.Substring(0, 60),
+                    TitleDescription = string.IsNullOrEmpty(x.gt.ai.TitleDescription)
+                    ? ""
+                    : x.gt.ai.TitleDescription.Length >= 60
+                        ? x.gt.ai.TitleDescription.Substring(0, 60)
+                        : x.gt.ai.TitleDescription,
                     Status = x.gt.ai.Status,
                     CreatedDate = x.gt.ai.CreatedDate,
                     ModifiedDate = x.gt.ai.ModifiedDate,
