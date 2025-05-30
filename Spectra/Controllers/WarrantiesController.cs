@@ -674,7 +674,7 @@ namespace Spectra.Controllers
 
         // DELETE: api/Warranties/5
         [HttpDelete("{id}")]
-        [BinaryAuthorize("Warranties", ActionType.Xoa)]
+        [BinaryAuthorize("Warranty", ActionType.Xoa)]
         public async Task<IActionResult> DeleteWarranty([FromRoute] int? id)
         {
             if (!ModelState.IsValid)
