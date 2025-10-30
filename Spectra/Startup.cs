@@ -157,6 +157,7 @@ namespace Spectra
             services.AddHttpContextAccessor();
             services.AddScoped<IVnPayService, VnPayService>();
             services.AddScoped<IServiceManagercs, ServiceManager>();
+            services.AddScoped<VnpayPaymentStatusJob>();
             services.AddScoped<IServiceVoucher, ServiceVoucher>();
             services.AddScoped<IServiceProductVariant, ServiceProductVariant>();
             services.AddDbContext<AppDBContext>(options => options.UseSqlServer(Configuration.GetConnectionString("DbConnect")));
@@ -202,14 +203,22 @@ namespace Spectra
                 DarkModeEnabled = false,
                 DisplayStorageConnectionString = false,
                 Authorization = new[]
-            {
-                new HangfireCustomBasicAuthenticationFilter{
-                    User = "admin@spectra",
-                    Pass = "Spectra@2022"
+                {
+                    new HangfireCustomBasicAuthenticationFilter{
+                        User = "admin@spectra",
+                        Pass = "Spectra@2022"
+                    }
                 }
-            }
-
             });
+            RecurringJob.AddOrUpdate<VnpayPaymentStatusJob>(
+                recurringJobId: "vnpay-payment-status-job", // ID duy nhất cho job
+                methodCall: job => job.CheckPendingPaymentsAsync(),
+                cronExpression: "*/5 * * * *", // chạy mỗi 5 phút
+                options: new RecurringJobOptions
+                {
+                    TimeZone = TimeZoneInfo.FindSystemTimeZoneById("SE Asia Standard Time")
+                }
+            );
             app.UseSwagger();
             app.UseSwaggerUI(c =>
             {

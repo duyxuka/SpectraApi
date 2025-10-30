@@ -2,11 +2,13 @@
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Spectra.Services;
 using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
 using System.Net;
+using System.Net.Http;
 using System.Net.Sockets;
 using System.Security.Cryptography;
 using System.Text;
@@ -162,7 +164,7 @@ namespace Spectra.Models.Payment
                 {
                     if (vnpResponseCode == "00" && vnp_TransactionStatus == "00")
                     {
-                        order.Status = 0; // Đơn hàng chờ xác nhận
+                        order.Status = 1; // Đơn hàng đã xác nhận
                     }
                     else
                     {
@@ -302,6 +304,47 @@ namespace Spectra.Models.Payment
             }
 
             return data.ToString();
+        }
+
+        public async Task<VnpQueryResult> QueryTransactionAsync(string txnRef, string transactionDate, string vnp_TmnCode, string vnp_HashSecret)
+        {
+            var baseUrl = "https://pay.vnpay.vn/merchant_webapi/api/transaction";
+            // đổi sang endpoint production khi triển khai thật
+
+            var vnp_Version = "2.1.0";
+            var vnp_Command = "querydr";
+            var vnp_RequestId = DateTime.Now.Ticks.ToString();
+            var vnp_CreateDate = DateTime.Now.ToString("yyyyMMddHHmmss");
+            var vnp_IpAddr = "127.0.0.1";
+
+            var requestData = new SortedList<string, string>(new VnPayCompare())
+        {
+            {"vnp_RequestId", vnp_RequestId},
+            {"vnp_Version", vnp_Version},
+            {"vnp_Command", vnp_Command},
+            {"vnp_TmnCode", vnp_TmnCode},
+            {"vnp_TxnRef", txnRef},
+            {"vnp_OrderInfo", "Truy van giao dich"},
+            {"vnp_TransactionDate", transactionDate},
+            {"vnp_CreateDate", vnp_CreateDate},
+            {"vnp_IpAddr", vnp_IpAddr}
+        };
+
+            var rawData = string.Join("&", requestData.Select(kv => kv.Key + "=" + kv.Value));
+            var vnp_SecureHash = HmacSha512(vnp_HashSecret, rawData);
+            requestData.Add("vnp_SecureHash", vnp_SecureHash);
+
+            using (var client = new HttpClient())
+            {
+                var content = new FormUrlEncodedContent(requestData);
+                var response = await client.PostAsync(baseUrl, content);
+                var responseString = await response.Content.ReadAsStringAsync();
+
+                if (string.IsNullOrEmpty(responseString))
+                    return null;
+
+                return System.Text.Json.JsonSerializer.Deserialize<VnpQueryResult>(responseString);
+            }
         }
     }
 
