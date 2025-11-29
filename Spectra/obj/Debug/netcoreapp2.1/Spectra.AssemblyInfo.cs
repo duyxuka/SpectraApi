@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("Spectra")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+64f2f3389f1a76486cca23f7e1229ebb7c7c9169")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+b11fc35056d798fad871bb401844a70c9d27e11d")]
 [assembly: System.Reflection.AssemblyProductAttribute("Spectra")]
 [assembly: System.Reflection.AssemblyTitleAttribute("Spectra")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

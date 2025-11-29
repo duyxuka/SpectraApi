@@ -565,11 +565,12 @@ namespace Spectra.Controllers
                     Giaphantram = giaphantram,
                     LinkName = product.Name?.Replace(" ", "-").ToLower(),
 
-                    Variants = product.ProductVariants.Select(v => new VariantDto
+                    Variants = product.ProductVariants.Where(v => v.Status == true).Select(v => new VariantDto
                     {
                         VariantId = v.Id,
                         Price = v.Price,
                         SalePrice = v.SalePrice,
+                        Status = v.Status,
                         Attributes = v.ProductVariantAttributes.Select(va => new AttributeDto
                         {
                             AttributeName = va.ValueAttribute.Attribute.Name,

@@ -236,78 +236,103 @@ namespace Spectra.Controllers
             return Ok(result);
         }
 
-
         [HttpGet]
         [Route("GetPermissionsByRoles")]
         [BinaryAuthorize("Admin", ActionType.Xem)]
-        public async Task<IActionResult> GetPermissionsByRoles([FromQuery] int[] roleIds, [FromQuery] int? accountId = null)
+        [HttpGet]
+        public async Task<IActionResult> GetPermissionsByRoles(
+    [FromQuery] string roleIds,
+    [FromQuery] int? accountId = null)
         {
-            if (roleIds == null || roleIds.Length == 0)
-            {
+            // Validate RoleIds
+            if (string.IsNullOrWhiteSpace(roleIds))
                 return BadRequest("RoleIds are required.");
+
+            int[] roleIdArray;
+
+            // Parse roleIds thủ công — chạy trên mọi môi trường (IIS/Kestrel/Swagger)
+            try
+            {
+                roleIdArray = roleIds
+                    .Replace(" ", "")
+                    .Split(',', StringSplitOptions.RemoveEmptyEntries)
+                    .Select(int.Parse)
+                    .ToArray();
+            }
+            catch
+            {
+                return BadRequest("Invalid roleIds format. Use: roleIds=1 or roleIds=1,2,3");
             }
 
+            // Validate AccountId
             if (accountId.HasValue && accountId <= 0)
-            {
                 return BadRequest("Invalid accountId.");
-            }
 
             try
             {
-                // Lấy tất cả modules và lưu vào dictionary để tăng tốc độ ánh xạ
+                // Load modules dictionary
                 var modules = await _context.Modules
                     .AsNoTracking()
                     .Select(m => new { m.Id, m.Name, m.Description })
                     .ToDictionaryAsync(m => m.Id, m => new { m.Name, m.Description });
 
-                // Lấy quyền từ vai trò
+                // Quyền từ Role
                 var rolePermissionsTask = _context.Permissions
                     .AsNoTracking()
-                    .Where(p => roleIds.Contains(p.RolesId))
-                    .Select(p => new PermissionDetail { ModulesId = p.ModulesId, PermissionValue = p.PermissionValue })
+                    .Where(p => roleIdArray.Contains(p.RolesId))
+                    .Select(p => new PermissionDetail
+                    {
+                        ModulesId = p.ModulesId,
+                        PermissionValue = p.PermissionValue
+                    })
                     .ToListAsync();
 
-                // Lấy quyền từ tài khoản (nếu có accountId)
-                Task<List<PermissionDetail>> accountPermissionsTask = accountId.HasValue
+                // Quyền theo Account (nếu có)
+                var accountPermissionsTask = accountId.HasValue
                     ? _context.AccountPermissions
                         .AsNoTracking()
                         .Where(ap => ap.AccountAdminId == accountId.Value)
-                        .Select(ap => new PermissionDetail { ModulesId = ap.ModulesId, PermissionValue = ap.PermissionValue })
+                        .Select(ap => new PermissionDetail
+                        {
+                            ModulesId = ap.ModulesId,
+                            PermissionValue = ap.PermissionValue
+                        })
                         .ToListAsync()
                     : Task.FromResult(new List<PermissionDetail>());
 
-                // Chờ cả hai truy vấn hoàn tất
+                // Chờ cả hai cùng chạy song song
                 await Task.WhenAll(rolePermissionsTask, accountPermissionsTask);
 
                 var rolePermissions = rolePermissionsTask.Result;
                 var accountPermissions = accountPermissionsTask.Result;
 
-                // Tổng hợp quyền theo ModulesId
-                var allPermissions = rolePermissions.Concat(accountPermissions)
+                // Gom quyền theo modules
+                var allPermissions = rolePermissions
+                    .Concat(accountPermissions)
                     .GroupBy(p => p.ModulesId)
                     .ToDictionary(
                         g => g.Key,
-                        g => g.Aggregate(0, (acc, p) => acc | p.PermissionValue));
+                        g => g.Aggregate(0, (acc, p) => acc | p.PermissionValue)
+                    );
 
-                // Ánh xạ với modules
+                // Map dữ liệu trả về
                 var result = modules.Select(m => new
                 {
                     ModulesId = m.Key,
                     ModuleName = m.Value.Name,
                     Description = m.Value.Description,
-                    PermissionValue = allPermissions.TryGetValue(m.Key, out var value) ? value : 0
+                    PermissionValue = allPermissions.TryGetValue(m.Key, out var val) ? val : 0
                 }).ToList();
 
                 return Ok(result);
             }
             catch (Exception ex)
             {
-                // Log chi tiết hơn
-                var errorMessage = $"Error in GetPermissionsByRoles: {ex.Message}, StackTrace: {ex.StackTrace}";
-                Console.WriteLine(errorMessage);
-                return StatusCode(500, "Internal Server Error: " + ex.Message);
+                Console.WriteLine($"Error in GetPermissionsByRoles: {ex}");
+                return StatusCode(500, "Internal Server Error.");
             }
         }
+
         public class PermissionDetail
         {
             public int ModulesId { get; set; }

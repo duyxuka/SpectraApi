@@ -36,12 +36,12 @@ namespace Spectra.Controllers
         {
             try
             {
-                var variantDtos = await _context.ProductVariants
+                var result = await _context.ProductVariants
                     .AsNoTracking()
                     .Select(pv => new VariantDto
                     {
                         VariantId = pv.Id,
-                        SKU = pv.JobId,
+                        SKU = pv.JobId ?? "0",
                         Price = pv.Price,
                         SalePrice = pv.SalePrice,
                         Status = pv.Status,
@@ -52,16 +52,18 @@ namespace Spectra.Controllers
                                 AttributeName = pva.ValueAttribute != null && pva.ValueAttribute.Attribute != null
                                     ? pva.ValueAttribute.Attribute.Name
                                     : "N/A",
-                                ValueName = pva.ValueAttribute != null ? pva.ValueAttribute.Name : "N/A"
+                                ValueName = pva.ValueAttribute != null
+                                    ? pva.ValueAttribute.Name
+                                    : "N/A"
                             })
                             .ToList(),
-                        ValueName = pv.ProductVariantAttributes.Any() && pv.ProductVariantAttributes.First().ValueAttribute != null
-                            ? pv.ProductVariantAttributes.First().ValueAttribute.Name
-                            : "N/A"
+                        ValueName = pv.ProductVariantAttributes
+                            .Select(pva => pva.ValueAttribute != null ? pva.ValueAttribute.Name : "N/A")
+                            .FirstOrDefault() ?? "N/A"
                     })
                     .ToListAsync();
 
-                return Ok(variantDtos);
+                return Ok(result);
             }
             catch (Exception ex)
             {
@@ -70,7 +72,6 @@ namespace Spectra.Controllers
                 return StatusCode(500, "Internal Server Error: " + ex.Message);
             }
         }
-
 
         // GET: api/ProductVariant/5
         [HttpGet("{id}")]
