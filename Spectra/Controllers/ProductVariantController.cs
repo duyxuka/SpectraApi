@@ -81,10 +81,8 @@ namespace Spectra.Controllers
             try
             {
                 var variant = await _context.ProductVariants
-                    .Include(v => v.Product)
-                    .Include(v => v.ProductVariantAttributes)
-                        .ThenInclude(a => a.ValueAttribute)
-                            .ThenInclude(va => va.Attribute)
+                    .AsNoTracking()
+                    .Where(v => v.Id == id)
                     .Select(pv => new VariantDto
                     {
                         VariantId = pv.Id,
@@ -94,26 +92,28 @@ namespace Spectra.Controllers
                         SalePrice = pv.SalePrice,
                         Status = pv.Status,
                         SKU = pv.JobId,
-                        ValueAttributeId = pv.ProductVariantAttributes.FirstOrDefault() != null
-                            ? pv.ProductVariantAttributes.FirstOrDefault().ValueAttributeId
-                            : 0,
-                        AttributeId = pv.ProductVariantAttributes.FirstOrDefault() != null && pv.ProductVariantAttributes.FirstOrDefault().ValueAttribute != null
-                            ? pv.ProductVariantAttributes.FirstOrDefault().ValueAttribute.AttributeId
-                            : 0,
-                        Attributes = pv.ProductVariantAttributes.Select(pva => new AttributeDto
-                        {
-                            AttributeName = pva.ValueAttribute != null && pva.ValueAttribute.Attribute != null
-                                ? pva.ValueAttribute.Attribute.Name
-                                : "N/A",
-                            ValueName = pva.ValueAttribute != null ? pva.ValueAttribute.Name : "N/A"
-                        }).ToList()
+
+                // Lấy giá trị attribute đầu tiên
+                ValueAttributeId = pv.ProductVariantAttributes
+                            .Select(a => a.ValueAttributeId)
+                            .FirstOrDefault(),
+
+                        AttributeId = pv.ProductVariantAttributes
+                            .Select(a => a.ValueAttribute.AttributeId)
+                            .FirstOrDefault(),
+
+                // Danh sách đầy đủ attributes
+                Attributes = pv.ProductVariantAttributes
+                            .Select(pva => new AttributeDto
+                            {
+                                AttributeName = pva.ValueAttribute.Attribute.Name,
+                                ValueName = pva.ValueAttribute.Name
+                            }).ToList()
                     })
-                    .FirstOrDefaultAsync(v => v.VariantId == id);
+                    .FirstOrDefaultAsync();
 
                 if (variant == null)
-                {
                     return NotFound();
-                }
 
                 return Ok(variant);
             }
@@ -123,6 +123,7 @@ namespace Spectra.Controllers
                 return StatusCode(500, "Internal Server Error");
             }
         }
+
 
         [HttpPost("variantsschedule")]
         [BinaryAuthorize("Product", ActionType.Sua)]

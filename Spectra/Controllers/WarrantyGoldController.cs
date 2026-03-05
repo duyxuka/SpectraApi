@@ -263,7 +263,7 @@ namespace Spectra.Controllers
 
                     var smtp = new SmtpClient
                     {
-                        Host = "smtp.mailer.inet.vn",
+                        Host = "zmhn092403.onemail.vn",
                         Port = 587,
                         EnableSsl = true,
                         DeliveryMethod = SmtpDeliveryMethod.Network,
@@ -407,7 +407,7 @@ namespace Spectra.Controllers
 
                     var smtp = new SmtpClient
                     {
-                        Host = "smtp.mailer.inet.vn",
+                        Host = "zmhn092403.onemail.vn",
                         Port = 587,
                         EnableSsl = true,
                         DeliveryMethod = SmtpDeliveryMethod.Network,

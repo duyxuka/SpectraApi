@@ -16,7 +16,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyProductAttribute("Spectra")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+b11fc35056d798fad871bb401844a70c9d27e11d")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+060738750fbbbe4397e0b567b0b7a3c7763e325f")]
 [assembly: System.Reflection.AssemblyTitleAttribute("Spectra.Views")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]
 
