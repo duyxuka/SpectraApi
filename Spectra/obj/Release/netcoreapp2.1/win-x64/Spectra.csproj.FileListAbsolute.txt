@@ -1,3 +1,6 @@
+D:\dulieuoc\Spectra\Spectra\bin\Release\netcoreapp2.1\win-x64\hostpolicy.dll
+D:\dulieuoc\Spectra\Spectra\bin\Release\netcoreapp2.1\win-x64\hostfxr.dll
+D:\dulieuoc\Spectra\Spectra\bin\Release\netcoreapp2.1\win-x64\Spectra.exe
 D:\dulieuoc\Spectra\Spectra\bin\Release\netcoreapp2.1\win-x64\Spectra.deps.json
 D:\dulieuoc\Spectra\Spectra\bin\Release\netcoreapp2.1\win-x64\Spectra.runtimeconfig.json
 D:\dulieuoc\Spectra\Spectra\bin\Release\netcoreapp2.1\win-x64\Spectra.runtimeconfig.dev.json
@@ -30,6 +33,3 @@ D:\dulieuoc\Spectra\Spectra\obj\Release\netcoreapp2.1\win-x64\Spectra.Views.pdb
 D:\dulieuoc\Spectra\Spectra\obj\Release\netcoreapp2.1\win-x64\Spectra.dll
 D:\dulieuoc\Spectra\Spectra\obj\Release\netcoreapp2.1\win-x64\Spectra.pdb
 D:\dulieuoc\Spectra\Spectra\obj\Release\netcoreapp2.1\win-x64\Spectra.csproj.CopyComplete
-D:\dulieuoc\Spectra\Spectra\bin\Release\netcoreapp2.1\win-x64\hostpolicy.dll
-D:\dulieuoc\Spectra\Spectra\bin\Release\netcoreapp2.1\win-x64\hostfxr.dll
-D:\dulieuoc\Spectra\Spectra\bin\Release\netcoreapp2.1\win-x64\Spectra.exe

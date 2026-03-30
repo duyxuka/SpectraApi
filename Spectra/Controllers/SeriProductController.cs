@@ -280,18 +280,97 @@ namespace Spectra.Controllers
         // POST: api/SeriProduct
         [HttpPost]
         [BinaryAuthorize("SeriProduct", ActionType.Them)]
-        public async Task<IActionResult> PostSeriProduct([FromBody] SeriProduct seriProduct)
+        public async Task<IActionResult> PostSeriProducts([FromBody] List<SeriProduct> seriProducts)
         {
-            if (!ModelState.IsValid)
+            if (seriProducts == null || !seriProducts.Any())
             {
-                return BadRequest(ModelState);
+                return BadRequest(new
+                {
+                    message = "Danh sách seri không được để trống."
+                });
             }
-            seriProduct.CreatedDate = DateTime.Now;
-            seriProduct.Status = false;
-            _context.SeriProducts.Add(seriProduct);
+
+            // chuẩn hóa dữ liệu
+            foreach (var s in seriProducts)
+            {
+                s.ProductSeri = s.ProductSeri?.Trim();
+            }
+
+            // validate từng item
+            var validationErrors = new List<string>();
+
+            foreach (var seri in seriProducts)
+            {
+                if (string.IsNullOrWhiteSpace(seri.ProductSeri))
+                    validationErrors.Add("Seri sản phẩm không được để trống.");
+
+                if (seri.ProductId <= 0)
+                    validationErrors.Add($"Seri {seri.ProductSeri}: ProductId không hợp lệ.");
+
+                if (seri.CityId <= 0)
+                    validationErrors.Add($"Seri {seri.ProductSeri}: CityId không hợp lệ.");
+
+                if (seri.LocationId <= 0)
+                    validationErrors.Add($"Seri {seri.ProductSeri}: LocationId không hợp lệ.");
+            }
+
+            if (validationErrors.Any())
+            {
+                return BadRequest(new
+                {
+                    message = "Dữ liệu không hợp lệ.",
+                    errors = validationErrors
+                });
+            }
+
+            // kiểm tra trùng trong request
+            var duplicateInRequest = seriProducts
+                .GroupBy(x => x.ProductSeri.ToLower())
+                .Where(g => g.Count() > 1)
+                .Select(g => g.Key)
+                .ToList();
+
+            if (duplicateInRequest.Any())
+            {
+                return BadRequest(new
+                {
+                    message = "Có seri bị trùng trong danh sách gửi lên.",
+                    duplicates = duplicateInRequest
+                });
+            }
+
+            // kiểm tra trùng trong database
+            var seriList = seriProducts.Select(x => x.ProductSeri).ToList();
+
+            var existingSeri = await _context.SeriProducts
+                .Where(x => seriList.Contains(x.ProductSeri))
+                .Select(x => x.ProductSeri)
+                .ToListAsync();
+
+            if (existingSeri.Any())
+            {
+                return BadRequest(new
+                {
+                    message = "Một số seri đã tồn tại trong hệ thống.",
+                    duplicates = existingSeri
+                });
+            }
+
+            // thêm dữ liệu
+            foreach (var seri in seriProducts)
+            {
+                seri.CreatedDate = DateTime.Now;
+                seri.Status = false;
+            }
+
+            await _context.SeriProducts.AddRangeAsync(seriProducts);
             await _context.SaveChangesAsync();
 
-            return CreatedAtAction("GetSeriProduct", new { id = seriProduct.Id }, seriProduct);
+            return Ok(new
+            {
+                message = $"Đã thêm {seriProducts.Count} seri thành công.",
+                total = seriProducts.Count
+            });
         }
 
         // DELETE: api/SeriProduct/5
