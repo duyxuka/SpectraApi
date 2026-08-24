@@ -74,12 +74,12 @@ using Spectra.Models;
     ");
             EndContext();
             BeginContext(316, 1530, false);
-            __tagHelperExecutionContext = __tagHelperScopeManager.Begin("form", global::Microsoft.AspNetCore.Razor.TagHelpers.TagMode.StartTagAndEndTag, "690891ffa6634564aea0ca324de91af9", async() => {
+            __tagHelperExecutionContext = __tagHelperScopeManager.Begin("form", global::Microsoft.AspNetCore.Razor.TagHelpers.TagMode.StartTagAndEndTag, "f444109ff5df4392b4223b454469cd1e", async() => {
                 BeginContext(388, 186, true);
                 WriteLiteral("\r\n        <div class=\"form-group\">\r\n            <label for=\"ordertype\">Loại hàng hóa </label>\r\n            <select name=\"OrderType\" id=\"ordertype\" class=\"form-control\">\r\n                ");
                 EndContext();
                 BeginContext(574, 44, false);
-                __tagHelperExecutionContext = __tagHelperScopeManager.Begin("option", global::Microsoft.AspNetCore.Razor.TagHelpers.TagMode.StartTagAndEndTag, "6e6fd22f577442aeab546d336a8baeac", async() => {
+                __tagHelperExecutionContext = __tagHelperScopeManager.Begin("option", global::Microsoft.AspNetCore.Razor.TagHelpers.TagMode.StartTagAndEndTag, "284a3e7108a24bb89a8f1efca8563dcd", async() => {
                     BeginContext(599, 10, true);
                     WriteLiteral("Đồ điện tử");
                     EndContext();
@@ -101,7 +101,7 @@ using Spectra.Models;
                 WriteLiteral("\r\n                ");
                 EndContext();
                 BeginContext(636, 43, false);
-                __tagHelperExecutionContext = __tagHelperScopeManager.Begin("option", global::Microsoft.AspNetCore.Razor.TagHelpers.TagMode.StartTagAndEndTag, "e9f3f1b8fc694c55b9bd9f436ec84c5a", async() => {
+                __tagHelperExecutionContext = __tagHelperScopeManager.Begin("option", global::Microsoft.AspNetCore.Razor.TagHelpers.TagMode.StartTagAndEndTag, "af0e31cab810413bab207035f5a615d7", async() => {
                     BeginContext(660, 10, true);
                     WriteLiteral("Thời trang");
                     EndContext();
@@ -123,7 +123,7 @@ using Spectra.Models;
                 WriteLiteral("\r\n                ");
                 EndContext();
                 BeginContext(697, 35, false);
-                __tagHelperExecutionContext = __tagHelperScopeManager.Begin("option", global::Microsoft.AspNetCore.Razor.TagHelpers.TagMode.StartTagAndEndTag, "afae449e078544c6b7811a22d475a8b5", async() => {
+                __tagHelperExecutionContext = __tagHelperScopeManager.Begin("option", global::Microsoft.AspNetCore.Razor.TagHelpers.TagMode.StartTagAndEndTag, "2ccab59651b749fbb4aa5c3a782dc273", async() => {
                     BeginContext(719, 4, true);
                     WriteLiteral("Khác");
                     EndContext();

@@ -29,3 +29,4 @@ D:\dulieuoc\Spectra\Spectra\obj\Debug\netcoreapp2.1\Spectra.Views.pdb
 D:\dulieuoc\Spectra\Spectra\obj\Debug\netcoreapp2.1\Spectra.dll
 D:\dulieuoc\Spectra\Spectra\obj\Debug\netcoreapp2.1\Spectra.pdb
 D:\dulieuoc\Spectra\Spectra\obj\Debug\netcoreapp2.1\Spectra.csproj.CopyComplete
+D:\dulieuoc\Spectra\Spectra\obj\Debug\netcoreapp2.1\Spectra.csprojAssemblyReference.cache

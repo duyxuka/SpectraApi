@@ -48,9 +48,17 @@ namespace Spectra.Services
             Directory.CreateDirectory(target);
 
             var savedFileNames = new List<string>();
-
+            var blockedExtensions = new[] {
+                ".aspx", ".asp", ".asa", ".ashx", ".asmx",
+                ".cs", ".php", ".exe", ".bat", ".cmd", ".sh",
+                ".config", ".vbs", ".jar"
+            };
             foreach (var file in files)
             {
+                var ext = Path.GetExtension(file.FileName).ToLower();
+                if (blockedExtensions.Contains(ext))
+                    throw new Exception($"Loại file '{ext}' không được phép upload.");
+
                 if (file.Length <= 0) continue;
 
                 // Tạo tên file mới bằng cách thêm GUID trước tên file gốc
@@ -84,9 +92,12 @@ namespace Spectra.Services
             Directory.CreateDirectory(target);
 
             var savedFileNames = new List<string>();
-
+            var allowedExtensions = new[] { ".jpg", ".jpeg", ".png", ".gif", ".webp" };
             foreach (var file in files)
             {
+                var ext = Path.GetExtension(file.FileName).ToLower();
+                if (!allowedExtensions.Contains(ext))
+                    throw new Exception($"Chỉ chấp nhận file ảnh (.jpg, .png, .gif).");
                 if (file.Length <= 0) continue;
 
                 // Tạo tên file mới bằng cách thêm GUID trước tên file gốc

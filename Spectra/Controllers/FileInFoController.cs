@@ -56,7 +56,6 @@ namespace Spectra.Controllers
 
         // upload file(s) to server that palce under path: rootDirectory/subDirectory
         [HttpPost("upload")]
-        [AllowAnonymous]
         public async Task<IActionResult> UploadFile([FromForm(Name = "file")] List<IFormFile> files, string subDirectory)
         {
             try
